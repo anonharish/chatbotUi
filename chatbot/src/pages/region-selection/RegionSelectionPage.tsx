@@ -4,57 +4,27 @@ import type { FeatureCollection } from 'geojson'
 import type { Layer, LeafletMouseEvent } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-interface DistrictProperties {
-  district_name: string
-  district_id: string
-  NEW_DIST: string
-}
-
-interface Region {
-  id: string
-  name: string
-  color: string
-  districts: Set<string>
-}
-
-// Predefined vibrant colors for regions
-const REGION_COLORS = [
-  '#22c55e', // Green
-  '#3b82f6', // Blue
-  '#f59e0b', // Amber
-  '#ef4444', // Red
-  '#8b5cf6', // Purple
-  '#ec4899', // Pink
-  '#14b8a6', // Teal
-  '#f97316', // Orange
-  '#06b6d4', // Cyan
-  '#84cc16', // Lime
-]
-
-// Generate a unique ID
-const generateId = () => Math.random().toString(36).substring(2, 9)
-
-// Get next available color
-const getNextColor = (usedColors: string[]): string => {
-  const availableColor = REGION_COLORS.find((c) => !usedColors.includes(c))
-  return availableColor || REGION_COLORS[Math.floor(Math.random() * REGION_COLORS.length)]
-}
-
-// Darken a hex color for borders
-const darkenColor = (hex: string, percent: number = 20): string => {
-  const num = parseInt(hex.replace('#', ''), 16)
-  const amt = Math.round(2.55 * percent)
-  const R = Math.max((num >> 16) - amt, 0)
-  const G = Math.max(((num >> 8) & 0x00ff) - amt, 0)
-  const B = Math.max((num & 0x0000ff) - amt, 0)
-  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`
-}
+import type { Region, DistrictProperties, DistrictData } from './types'
+import {
+  generateId,
+  getNextColor,
+  darkenColor,
+  SELECTION_COLOR,
+  SELECTION_BORDER,
+  DEFAULT_FILL,
+  DEFAULT_BORDER,
+  HOVER_FILL,
+  HOVER_BORDER,
+} from './constants'
+import { RegionForm, RegionCard } from './components'
 
 const RegionSelectionPage = () => {
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null)
   const [regions, setRegions] = useState<Region[]>([])
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set())
   const [regionName, setRegionName] = useState('')
+  const [regionalOfficer, setRegionalOfficer] = useState('')
+  const [intelligentOfficer, setIntelligentOfficer] = useState('')
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
   const [editingRegionId, setEditingRegionId] = useState<string | null>(null)
 
@@ -93,24 +63,27 @@ const RegionSelectionPage = () => {
   )
 
   // Toggle district selection
-  const toggleDistrictSelection = useCallback((districtId: string) => {
-    // Check if district belongs to an existing region
-    const existingRegion = districtToRegion.get(districtId)
-    if (existingRegion) {
-      // Cannot select districts that belong to saved regions
-      return
-    }
-
-    setCurrentSelection((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(districtId)) {
-        newSet.delete(districtId)
-      } else {
-        newSet.add(districtId)
+  const toggleDistrictSelection = useCallback(
+    (districtId: string) => {
+      // Check if district belongs to an existing region
+      const existingRegion = districtToRegion.get(districtId)
+      if (existingRegion) {
+        // Cannot select districts that belong to saved regions
+        return
       }
-      return newSet
-    })
-  }, [districtToRegion])
+
+      setCurrentSelection((prev) => {
+        const newSet = new Set(prev)
+        if (newSet.has(districtId)) {
+          newSet.delete(districtId)
+        } else {
+          newSet.add(districtId)
+        }
+        return newSet
+      })
+    },
+    [districtToRegion]
+  )
 
   // Save current selection as a region
   const saveRegion = () => {
@@ -122,11 +95,12 @@ const RegionSelectionPage = () => {
       name: regionName.trim(),
       color: getNextColor(usedColors),
       districts: new Set(currentSelection),
+      regionalOfficer: regionalOfficer.trim(),
+      intelligentOfficer: intelligentOfficer.trim(),
     }
 
     setRegions((prev) => [...prev, newRegion])
-    setCurrentSelection(new Set())
-    setRegionName('')
+    clearSelection()
   }
 
   // Delete a region
@@ -139,13 +113,28 @@ const RegionSelectionPage = () => {
     setRegions((prev) =>
       prev.map((r) => (r.id === regionId ? { ...r, name: newName } : r))
     )
-    setEditingRegionId(null)
+  }
+
+  // Update regional officer
+  const updateRegionalOfficer = (regionId: string, officer: string) => {
+    setRegions((prev) =>
+      prev.map((r) => (r.id === regionId ? { ...r, regionalOfficer: officer } : r))
+    )
+  }
+
+  // Update intelligent officer
+  const updateIntelligentOfficer = (regionId: string, officer: string) => {
+    setRegions((prev) =>
+      prev.map((r) => (r.id === regionId ? { ...r, intelligentOfficer: officer } : r))
+    )
   }
 
   // Clear current selection
   const clearSelection = () => {
     setCurrentSelection(new Set())
     setRegionName('')
+    setRegionalOfficer('')
+    setIntelligentOfficer('')
   }
 
   // Remove single district from current selection
@@ -176,10 +165,10 @@ const RegionSelectionPage = () => {
       const isSelected = currentSelection.has(districtId)
       if (isSelected) {
         return {
-          fillColor: '#a855f7', // Purple for current selection
+          fillColor: SELECTION_COLOR,
           weight: 2,
           opacity: 1,
-          color: '#7c3aed',
+          color: SELECTION_BORDER,
           fillOpacity: 0.75,
         }
       }
@@ -187,20 +176,20 @@ const RegionSelectionPage = () => {
       const isHovered = hoveredDistrict === districtId
       if (isHovered) {
         return {
-          fillColor: '#60a5fa',
+          fillColor: HOVER_FILL,
           weight: 2,
           opacity: 1,
-          color: '#2563eb',
+          color: HOVER_BORDER,
           fillOpacity: 0.7,
         }
       }
 
       // Default non-selected districts
       return {
-        fillColor: '#e2e8f0',
+        fillColor: DEFAULT_FILL,
         weight: 1,
         opacity: 1,
-        color: '#94a3b8',
+        color: DEFAULT_BORDER,
         fillOpacity: 0.6,
       }
     },
@@ -223,7 +212,7 @@ const RegionSelectionPage = () => {
 
           if (!region && !isSelected) {
             target.setStyle({
-              fillColor: '#60a5fa',
+              fillColor: HOVER_FILL,
               fillOpacity: 0.7,
             })
           }
@@ -239,11 +228,21 @@ const RegionSelectionPage = () => {
         },
       })
 
-      // Build tooltip content with region info
+      // Build tooltip content with region and officer info
       const region = districtToRegion.get(districtId)
-      const tooltipContent = region
-        ? `<div><strong>${districtName}</strong><br/><span style="color: ${region.color};">● Region: ${region.name}</span></div>`
-        : `<strong>${districtName}</strong>`
+      let tooltipContent = `<div><strong>${districtName}</strong>`
+
+      if (region) {
+        tooltipContent += `<br/><span style="color: ${region.color};">● Region: ${region.name}</span>`
+        if (region.regionalOfficer) {
+          tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
+        }
+        if (region.intelligentOfficer) {
+          tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
+        }
+      }
+
+      tooltipContent += '</div>'
 
       layer.bindTooltip(tooltipContent, {
         permanent: false,
@@ -255,10 +254,10 @@ const RegionSelectionPage = () => {
   )
 
   // Get selected district data for display
-  const getSelectedDistrictData = (): { id: string; name: string }[] => {
+  const getSelectedDistrictData = (): DistrictData[] => {
     if (!geoData) return []
 
-    const districtData: { id: string; name: string }[] = []
+    const districtData: DistrictData[] = []
     const seenIds = new Set<string>()
 
     geoData.features.forEach((feature) => {
@@ -281,7 +280,9 @@ const RegionSelectionPage = () => {
 
   // Generate key for GeoJSON to force re-render
   const geoJsonKey = useMemo(() => {
-    const regionKey = regions.map((r) => `${r.id}:${Array.from(r.districts).join(',')}`).join('|')
+    const regionKey = regions
+      .map((r) => `${r.id}:${Array.from(r.districts).join(',')}`)
+      .join('|')
     const selectionKey = Array.from(currentSelection).join(',')
     return `${regionKey}||${selectionKey}`
   }, [regions, currentSelection])
@@ -332,11 +333,11 @@ const RegionSelectionPage = () => {
         <div className="p-3 border-t bg-card">
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#e2e8f0' }} />
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: DEFAULT_FILL }} />
               <span>Available</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: '#a855f7' }} />
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: SELECTION_COLOR }} />
               <span>Current Selection</span>
             </div>
             {regions.map((region) => (
@@ -355,7 +356,7 @@ const RegionSelectionPage = () => {
         <div className="p-4 border-b">
           <h1 className="text-xl font-bold">Region Manager</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Create and manage custom regions
+            Create and manage custom regions with officers
           </p>
         </div>
 
@@ -364,159 +365,43 @@ const RegionSelectionPage = () => {
           {/* Current Selection Section */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: SELECTION_COLOR }} />
               New Region Selection
             </h3>
 
-            {selectedData.length > 0 ? (
-              <div className="space-y-3">
-                {/* Region Name Input */}
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
-                    Region Name
-                  </label>
-                  <input
-                    type="text"
-                    value={regionName}
-                    onChange={(e) => setRegionName(e.target.value)}
-                    placeholder="Enter region name..."
-                    className="w-full px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                {/* Selected Districts */}
-                <div className="space-y-2 max-h-40 overflow-auto">
-                  {selectedData.map((district) => (
-                    <div
-                      key={district.id}
-                      className="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800"
-                    >
-                      <span className="text-sm text-purple-800 dark:text-purple-200">
-                        {district.name}
-                      </span>
-                      <button
-                        onClick={() => removeFromSelection(district.id)}
-                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500"
-                        title="Remove"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={clearSelection}
-                    className="flex-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md transition-colors"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onClick={saveRegion}
-                    disabled={!regionName.trim()}
-                    className="flex-1 px-3 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Save Region
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md text-center">
-                Click on available districts to start creating a new region
-              </p>
-            )}
+            <RegionForm
+              selectedDistricts={selectedData}
+              regionName={regionName}
+              regionalOfficer={regionalOfficer}
+              intelligentOfficer={intelligentOfficer}
+              onRegionNameChange={setRegionName}
+              onRegionalOfficerChange={setRegionalOfficer}
+              onIntelligentOfficerChange={setIntelligentOfficer}
+              onRemoveDistrict={removeFromSelection}
+              onClear={clearSelection}
+              onSave={saveRegion}
+            />
           </div>
 
           {/* Saved Regions Section */}
           {regions.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                Saved Regions ({regions.length})
-              </h3>
+              <h3 className="text-sm font-semibold">Saved Regions ({regions.length})</h3>
 
               <div className="space-y-3">
                 {regions.map((region) => (
-                  <div
+                  <RegionCard
                     key={region.id}
-                    className="p-3 rounded-lg border"
-                    style={{
-                      backgroundColor: `${region.color}15`,
-                      borderColor: `${region.color}40`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: region.color }}
-                        />
-                        {editingRegionId === region.id ? (
-                          <input
-                            type="text"
-                            defaultValue={region.name}
-                            autoFocus
-                            onBlur={(e) => updateRegionName(region.id, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                updateRegionName(region.id, e.currentTarget.value)
-                              }
-                            }}
-                            className="px-2 py-1 text-sm border rounded bg-background"
-                          />
-                        ) : (
-                          <span
-                            className="font-medium cursor-pointer hover:underline"
-                            onClick={() => setEditingRegionId(region.id)}
-                            title="Click to edit name"
-                          >
-                            {region.name}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => deleteRegion(region.id)}
-                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500"
-                        title="Delete region"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18" />
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div className="text-xs text-muted-foreground mb-2">
-                      {region.districts.size} district{region.districts.size !== 1 ? 's' : ''}
-                    </div>
-
-                    <div className="flex flex-wrap gap-1">
-                      {Array.from(region.districts)
-                        .slice(0, 5)
-                        .map((districtId) => (
-                          <span
-                            key={districtId}
-                            className="px-2 py-0.5 text-xs rounded"
-                            style={{
-                              backgroundColor: `${region.color}30`,
-                              color: darkenColor(region.color, 40),
-                            }}
-                          >
-                            {getDistrictName(districtId)}
-                          </span>
-                        ))}
-                      {region.districts.size > 5 && (
-                        <span className="px-2 py-0.5 text-xs text-muted-foreground">
-                          +{region.districts.size - 5} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    region={region}
+                    getDistrictName={getDistrictName}
+                    onDelete={deleteRegion}
+                    onUpdateName={updateRegionName}
+                    onUpdateRegionalOfficer={updateRegionalOfficer}
+                    onUpdateIntelligentOfficer={updateIntelligentOfficer}
+                    isEditing={editingRegionId === region.id}
+                    onEditStart={setEditingRegionId}
+                    onEditEnd={() => setEditingRegionId(null)}
+                  />
                 ))}
               </div>
             </div>
@@ -542,7 +427,7 @@ const RegionSelectionPage = () => {
               </div>
               <h3 className="font-semibold text-lg mb-1">No Regions Created</h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Select districts from the map, name your region, and save it to create custom regions
+                Select districts from the map, name your region, assign officers, and save
               </p>
             </div>
           )}
