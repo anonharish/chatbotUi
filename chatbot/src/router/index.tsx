@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 // Lazy load pages for optimal bundle splitting
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const RegionSelectionPage = lazy(() => import('@/pages/RegionSelectionPage'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: 'chat',
         element: withSuspense(HomePage),
+      },
+      {
+        path: 'region-selection',
+        element: withSuspense(RegionSelectionPage),
       },
       // Add more routes here as needed
       // Example:

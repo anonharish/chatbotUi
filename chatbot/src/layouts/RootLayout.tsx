@@ -8,9 +8,9 @@ export default function RootLayout() {
         <div className="container mx-auto flex h-14 items-center px-4">
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">AI</span>
+              <span className="text-white text-sm font-bold">DA</span>
             </div>
-            <span className="text-xl font-bold">ChatBot UI</span>
+            <span className="text-xl font-bold">Demo App</span>
           </div>
           <nav className="ml-auto flex items-center space-x-4">
             {/* Add navigation items here */}
@@ -24,11 +24,11 @@ export default function RootLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-4 absolute bottom-0 w-full">
+      {/* <footer className="border-t border-border py-4 absolute bottom-0 w-full">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ChatBot UI. All rights reserved.
+          © {new Date().getFullYear()} Demo App. All rights reserved.
         </div>
-      </footer>
+      </footer> */}
     </div>
   )
 }
