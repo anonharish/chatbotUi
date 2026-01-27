@@ -44,3 +44,50 @@ export const DEFAULT_BORDER = '#94a3b8'
 // Hover colors
 export const HOVER_FILL = '#60a5fa'
 export const HOVER_BORDER = '#2563eb'
+
+// State code to name mapping (from INDIA_DISTRICTS.geojson)
+export const STATE_CODE_MAP: Record<string, string> = {
+  '1': 'Jammu and Kashmir',
+  '2': 'Himachal Pradesh',
+  '3': 'Punjab',
+  '4': 'Chandigarh',
+  '5': 'Uttarakhand',
+  '6': 'Haryana',
+  '7': 'Delhi',
+  '8': 'Rajasthan',
+  '9': 'Uttar Pradesh',
+  '10': 'Bihar',
+  '11': 'Sikkim',
+  '12': 'Arunachal Pradesh',
+  '13': 'Nagaland',
+  '14': 'Manipur',
+  '15': 'Mizoram',
+  '16': 'Tripura',
+  '17': 'Meghalaya',
+  '18': 'Assam',
+  '19': 'West Bengal',
+  '20': 'Jharkhand',
+  '21': 'Odisha',
+  '22': 'Chhattisgarh',
+  '23': 'Madhya Pradesh',
+  '24': 'Gujarat',
+  '26': 'Dadra and Nagar Haveli and Daman and Diu',
+  '27': 'Maharashtra',
+  '28': 'Andhra Pradesh',
+  '29': 'Karnataka',
+  '30': 'Goa',
+  '31': 'Lakshadweep',
+  '32': 'Kerala',
+  '33': 'Tamil Nadu',
+  '34': 'Puducherry',
+  '35': 'Andaman and Nicobar Islands',
+  '36': 'Telangana',
+  '37': 'Ladakh',
+}
+
+// Reverse mapping: State name to code
+export const STATE_NAME_TO_CODE: Record<string, string> = Object.entries(STATE_CODE_MAP).reduce(
+  (acc, [code, name]) => ({ ...acc, [name]: code }),
+  {}
+)
+

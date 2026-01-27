@@ -42,7 +42,7 @@ export function useChatbot() {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.onstart = () => setIsListening(true);
         recognitionRef.current.onend = () => setIsListening(false);
-        recognitionRef.current.onresult = (event) => {
+        recognitionRef.current.onresult = (event: { results: Iterable<{ 0: { transcript: string } }> }) => {
           const transcript = Array.from(event.results)
             .map((result) => result[0].transcript)
             .join("");
@@ -114,7 +114,7 @@ export function useChatbot() {
       });
 
       let charIndex = 0;
-      const fullText = data.reply;
+      const fullText = data.reply!;
 
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
 
@@ -139,7 +139,7 @@ export function useChatbot() {
                 ? {
                     ...m,
                     content: hasRows
-                      ? { text: fullText, rows: data.rows }
+                      ? { text: fullText, rows: data.rows! }
                       : fullText,
                   }
                 : m

@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { MapContainer, GeoJSON, TileLayer, useMap } from 'react-leaflet'
 import type { FeatureCollection, Feature } from 'geojson'
-import type { Layer, LeafletMouseEvent, Map as LeafletMap } from 'leaflet'
+import type { Layer, LeafletMouseEvent, Map as LeafletMap, LatLngBounds } from 'leaflet'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import type { Region, DistrictProperties, DistrictData } from './types'
@@ -15,6 +16,7 @@ import {
   DEFAULT_BORDER,
   HOVER_FILL,
   HOVER_BORDER,
+  STATE_NAME_TO_CODE,
 } from './constants'
 import { RegionForm, RegionCard } from './components'
 
@@ -29,19 +31,30 @@ interface StateProperties {
 const INDIA_CENTER: [number, number] = [22.5937, 78.9629]
 const INDIA_ZOOM = 5
 
-// Andhra Pradesh center and bounds
-const AP_CENTER: [number, number] = [15.9129, 79.74]
-const AP_ZOOM = 7
-
 // India States GeoJSON URL (from a public CDN)
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
 
+// All India Districts GeoJSON (local file)
+const INDIA_DISTRICTS_URL = '/INDIA_DISTRICTS.geojson'
+
+// Helper function to get bounds from a GeoJSON feature
+const getBoundsFromFeature = (feature: Feature): LatLngBounds | null => {
+  try {
+    const layer = L.geoJSON(feature)
+    return layer.getBounds()
+  } catch {
+    return null
+  }
+}
+
 // Map controller component for smooth animations
 const MapController = ({ 
-  selectedState, 
+  selectedState,
+  statesGeoData,
   onMapReady 
 }: { 
   selectedState: string | null
+  statesGeoData: FeatureCollection | null
   onMapReady: (map: LeafletMap) => void 
 }) => {
   const map = useMap()
@@ -51,12 +64,23 @@ const MapController = ({
   }, [map, onMapReady])
 
   useEffect(() => {
-    if (selectedState === 'Andhra Pradesh') {
-      // Smooth fly to Andhra Pradesh
-      map.flyTo(AP_CENTER, AP_ZOOM, {
-        duration: 2,
-        easeLinearity: 0.25,
+    if (selectedState && statesGeoData) {
+      // Find the state feature and get its bounds
+      const stateFeature = statesGeoData.features.find((f) => {
+        const props = f.properties as StateProperties
+        return (props.ST_NM || props.name) === selectedState
       })
+      
+      if (stateFeature) {
+        const bounds = getBoundsFromFeature(stateFeature)
+        if (bounds) {
+          map.flyToBounds(bounds, {
+            duration: 2,
+            padding: [20, 20],
+          })
+          return
+        }
+      }
     } else if (selectedState === null) {
       // Fly back to India view
       map.flyTo(INDIA_CENTER, INDIA_ZOOM, {
@@ -64,7 +88,7 @@ const MapController = ({
         easeLinearity: 0.25,
       })
     }
-  }, [selectedState, map])
+  }, [selectedState, statesGeoData, map])
 
   return null
 }
@@ -72,7 +96,9 @@ const MapController = ({
 const RegionSelectionPage = () => {
   // Map and view state
   const [indiaGeoData, setIndiaGeoData] = useState<FeatureCollection | null>(null)
-  const [apDistrictsData, setApDistrictsData] = useState<FeatureCollection | null>(null)
+  const [allDistrictsData, setAllDistrictsData] = useState<FeatureCollection | null>(null)
+  const [districtsLoading, setDistrictsLoading] = useState(false)
+  const [districtsLoadError, setDistrictsLoadError] = useState<string | null>(null)
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [hoveredState, setHoveredState] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -95,25 +121,62 @@ const RegionSelectionPage = () => {
       .catch((error) => console.error('Error loading India GeoJSON:', error))
   }, [])
 
-  // Load AP districts when state is selected
-  useEffect(() => {
-    if (selectedState === 'Andhra Pradesh') {
-      fetch('/AndhraPradesh_Districts.geojson')
-        .then((response) => response.json())
-        .then((data: FeatureCollection) => setApDistrictsData(data))
-        .catch((error) => console.error('Error loading AP districts:', error))
+  // Load all districts when any state is clicked (lazy load once)
+  const loadAllDistricts = useCallback(() => {
+    if (allDistrictsData || districtsLoading) return
+    
+    setDistrictsLoading(true)
+    setDistrictsLoadError(null)
+    
+    fetch(INDIA_DISTRICTS_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to load districts data')
+        return response.json()
+      })
+      .then((data: FeatureCollection) => {
+        setAllDistrictsData(data)
+        setDistrictsLoading(false)
+      })
+      .catch((error) => {
+        console.error('Error loading districts GeoJSON:', error)
+        setDistrictsLoadError(error.message)
+        setDistrictsLoading(false)
+      })
+  }, [allDistrictsData, districtsLoading])
+
+  // Filter districts by selected state (memoized for performance)
+  const filteredDistrictsData = useMemo(() => {
+    if (!allDistrictsData || !selectedState) return null
+    
+    const stateCode = STATE_NAME_TO_CODE[selectedState]
+    if (!stateCode) return null
+    
+    const filteredFeatures = allDistrictsData.features.filter((feature) => {
+      const props = feature.properties as DistrictProperties
+      return props.statecode === stateCode
+    })
+    
+    return {
+      type: 'FeatureCollection' as const,
+      features: filteredFeatures,
     }
-  }, [selectedState])
+  }, [allDistrictsData, selectedState])
 
   // Handle state click
   const handleStateClick = useCallback((stateName: string) => {
-    if (stateName === 'Andhra Pradesh') {
-      setIsTransitioning(true)
-      setSelectedState(stateName)
-      // Allow transition to complete before showing districts
-      setTimeout(() => setIsTransitioning(false), 2000)
+    // Check if we have a state code mapping for this state
+    const stateCode = STATE_NAME_TO_CODE[stateName]
+    if (!stateCode) {
+      console.warn(`No state code found for: ${stateName}`)
+      return
     }
-  }, [])
+    
+    setIsTransitioning(true)
+    setSelectedState(stateName)
+    loadAllDistricts()
+    // Allow transition to complete before showing districts
+    setTimeout(() => setIsTransitioning(false), 2000)
+  }, [loadAllDistricts])
 
   // Handle back to India view
   const handleBackToIndia = useCallback(() => {
@@ -133,9 +196,9 @@ const RegionSelectionPage = () => {
     const props = feature?.properties as StateProperties
     const stateName = props?.ST_NM || props?.name || ''
     const isHovered = hoveredState === stateName
-    const isAP = stateName === 'Andhra Pradesh'
+    const hasStateCode = STATE_NAME_TO_CODE[stateName] !== undefined
 
-    if (isAP) {
+    if (hasStateCode) {
       return {
         fillColor: isHovered ? '#22c55e' : '#4ade80',
         weight: isHovered ? 3 : 2,
@@ -157,12 +220,13 @@ const RegionSelectionPage = () => {
   const onEachState = useCallback((feature: Feature, layer: Layer) => {
     const props = feature.properties as StateProperties
     const stateName = props.ST_NM || props.name || 'Unknown'
+    const hasStateCode = STATE_NAME_TO_CODE[stateName] !== undefined
 
     layer.on({
       mouseover: (e: LeafletMouseEvent) => {
         setHoveredState(stateName)
         const target = e.target
-        if (stateName === 'Andhra Pradesh') {
+        if (hasStateCode) {
           target.setStyle({
             fillColor: '#22c55e',
             fillOpacity: 0.7,
@@ -188,8 +252,7 @@ const RegionSelectionPage = () => {
     })
 
     // Tooltip with state name
-    const isAP = stateName === 'Andhra Pradesh'
-    const tooltipContent = isAP
+    const tooltipContent = hasStateCode
       ? `<div><strong>${stateName}</strong><br/><span class="text-xs text-green-600">Click to explore districts</span></div>`
       : `<strong>${stateName}</strong>`
 
@@ -200,7 +263,7 @@ const RegionSelectionPage = () => {
     })
   }, [getStateStyle, handleStateClick])
 
-  // ==================== District Level (existing logic) ====================
+  // ==================== District Level ====================
   const districtToRegion = useMemo(() => {
     const map = new Map<string, Region>()
     regions.forEach((region) => {
@@ -211,19 +274,33 @@ const RegionSelectionPage = () => {
     return map
   }, [regions])
 
+  // Helper to get district ID from properties
+  const getDistrictId = useCallback((props: DistrictProperties): string => {
+    // For all-India format: use objectid or combine statecode + district
+    if (props.objectid) return props.objectid
+    if (props.statecode && props.district) return `${props.statecode}_${props.district}`
+    // Fallback for old AP format
+    return props.district_id || props.NEW_DIST || ''
+  }, [])
+
+  // Helper to get district name from properties
+  const getDistrictNameFromProps = useCallback((props: DistrictProperties): string => {
+    return props.district || props.district_name || props.NEW_DIST || 'Unknown'
+  }, [])
+
   const getDistrictName = useCallback(
     (districtId: string): string => {
-      if (!apDistrictsData) return districtId
-      for (const feature of apDistrictsData.features) {
+      if (!filteredDistrictsData) return districtId
+      for (const feature of filteredDistrictsData.features) {
         const props = feature.properties as DistrictProperties
-        const id = props.district_id || props.NEW_DIST
+        const id = getDistrictId(props)
         if (id === districtId) {
-          return props.district_name || props.NEW_DIST
+          return getDistrictNameFromProps(props)
         }
       }
       return districtId
     },
-    [apDistrictsData]
+    [filteredDistrictsData, getDistrictId, getDistrictNameFromProps]
   )
 
   const toggleDistrictSelection = useCallback(
@@ -245,7 +322,7 @@ const RegionSelectionPage = () => {
   )
 
   const saveRegion = () => {
-    if (currentSelection.size === 0 || !regionName.trim()) return
+    if (currentSelection.size === 0 || !regionName.trim() || !selectedState) return
 
     const usedColors = regions.map((r) => r.color)
     const newRegion: Region = {
@@ -255,6 +332,7 @@ const RegionSelectionPage = () => {
       districts: new Set(currentSelection),
       regionalOfficer: regionalOfficer.trim(),
       intelligentOfficer: intelligentOfficer.trim(),
+      state: selectedState,
     }
 
     setRegions((prev) => [...prev, newRegion])
@@ -347,8 +425,8 @@ const RegionSelectionPage = () => {
   const onEachDistrict = useCallback(
     (feature: Feature, layer: Layer) => {
       const props = feature.properties as DistrictProperties
-      const districtId = props.district_id || props.NEW_DIST
-      const districtName = props.district_name || props.NEW_DIST
+      const districtId = getDistrictId(props)
+      const districtName = getDistrictNameFromProps(props)
 
       layer.on({
         mouseover: (e: LeafletMouseEvent) => {
@@ -377,6 +455,10 @@ const RegionSelectionPage = () => {
 
       const region = districtToRegion.get(districtId)
       let tooltipContent = `<div><strong>${districtName}</strong>`
+      
+      if (selectedState) {
+        tooltipContent += `<br/><small class="text-muted-foreground">${selectedState}</small>`
+      }
 
       if (region) {
         tooltipContent += `<br/><span style="color: ${region.color};">● Region: ${region.name}</span>`
@@ -396,22 +478,22 @@ const RegionSelectionPage = () => {
         className: 'district-tooltip',
       })
     },
-    [currentSelection, getDistrictStyle, toggleDistrictSelection, districtToRegion]
+    [currentSelection, getDistrictStyle, toggleDistrictSelection, districtToRegion, getDistrictId, getDistrictNameFromProps, selectedState]
   )
 
   const getSelectedDistrictData = (): DistrictData[] => {
-    if (!apDistrictsData) return []
+    if (!filteredDistrictsData) return []
 
     const districtData: DistrictData[] = []
     const seenIds = new Set<string>()
 
-    apDistrictsData.features.forEach((feature) => {
+    filteredDistrictsData.features.forEach((feature) => {
       const props = feature.properties as DistrictProperties
-      const districtId = props.district_id || props.NEW_DIST
-      const districtName = props.district_name || props.NEW_DIST
+      const districtId = getDistrictId(props)
+      const districtName = getDistrictNameFromProps(props)
 
       if (currentSelection.has(districtId) && !seenIds.has(districtId)) {
-        districtData.push({ id: districtId, name: districtName })
+        districtData.push({ id: districtId, name: districtName, state: selectedState || undefined })
         seenIds.add(districtId)
       }
     })
@@ -421,16 +503,22 @@ const RegionSelectionPage = () => {
 
   const selectedData = getSelectedDistrictData()
 
+  // Filter regions for current state
+  const currentStateRegions = useMemo(() => {
+    if (!selectedState) return []
+    return regions.filter((r) => r.state === selectedState)
+  }, [regions, selectedState])
+
   const geoJsonKey = useMemo(() => {
     const regionKey = regions
       .map((r) => `${r.id}:${Array.from(r.districts).join(',')}`)
       .join('|')
     const selectionKey = Array.from(currentSelection).join(',')
-    return `${regionKey}||${selectionKey}`
-  }, [regions, currentSelection])
+    return `${selectedState}||${regionKey}||${selectionKey}`
+  }, [regions, currentSelection, selectedState])
 
-  const isLoading = !indiaGeoData || (selectedState === 'Andhra Pradesh' && !apDistrictsData)
-  const showDistricts = selectedState === 'Andhra Pradesh' && apDistrictsData && !isTransitioning
+  const isLoading = !indiaGeoData || (selectedState && !filteredDistrictsData && !districtsLoadError)
+  const showDistricts = selectedState && filteredDistrictsData && !isTransitioning
 
   return (
     <div className="flex h-screen bg-background">
@@ -445,8 +533,8 @@ const RegionSelectionPage = () => {
               </h2>
               <p className="text-xs text-muted-foreground">
                 {selectedState
-                  ? 'Click on districts to select. Hover to see region info.'
-                  : 'Click on Andhra Pradesh to explore districts'}
+                  ? `Click on districts to select. ${filteredDistrictsData?.features.length || 0} districts available.`
+                  : 'Click on any highlighted state to explore its districts'}
               </p>
             </div>
             {selectedState && (
@@ -487,7 +575,11 @@ const RegionSelectionPage = () => {
               />
 
               {/* Map Controller for animations */}
-              <MapController selectedState={selectedState} onMapReady={handleMapReady} />
+              <MapController 
+                selectedState={selectedState} 
+                statesGeoData={indiaGeoData}
+                onMapReady={handleMapReady} 
+              />
 
               {/* India States Layer (shown when no state selected or transitioning) */}
               {indiaGeoData && !showDistricts && (
@@ -499,20 +591,50 @@ const RegionSelectionPage = () => {
                 />
               )}
 
-              {/* AP Districts Layer (shown when AP is selected and not transitioning) */}
-              {showDistricts && apDistrictsData && (
+              {/* Districts Layer (shown when state is selected and not transitioning) */}
+              {showDistricts && filteredDistrictsData && (
                 <GeoJSON
-                  key={`ap-districts-${geoJsonKey}`}
-                  data={apDistrictsData}
+                  key={`districts-${geoJsonKey}`}
+                  data={filteredDistrictsData}
                   style={(feature) => {
                     const props = feature?.properties as DistrictProperties
-                    const districtId = props?.district_id || props?.NEW_DIST
+                    const districtId = getDistrictId(props)
                     return getDistrictStyle(districtId)
                   }}
                   onEachFeature={onEachDistrict}
                 />
               )}
             </MapContainer>
+          )}
+
+          {/* Loading overlay for districts */}
+          {districtsLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-[1000]">
+              <div className="bg-card p-4 rounded-lg shadow-lg text-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
+                <p className="text-sm font-medium">Loading districts data...</p>
+                <p className="text-xs text-muted-foreground">This may take a moment (74MB file)</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error overlay */}
+          {districtsLoadError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-[1000]">
+              <div className="bg-card p-4 rounded-lg shadow-lg text-center max-w-sm">
+                <p className="text-sm font-medium text-red-600 mb-2">Failed to load districts</p>
+                <p className="text-xs text-muted-foreground mb-3">{districtsLoadError}</p>
+                <button
+                  onClick={() => {
+                    setDistrictsLoadError(null)
+                    loadAllDistricts()
+                  }}
+                  className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Transition Overlay */}
@@ -535,11 +657,11 @@ const RegionSelectionPage = () => {
               <>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#94a3b8' }} />
-                  <span>Other States</span>
+                  <span>States (no district data)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4ade80' }} />
-                  <span>Andhra Pradesh (Click to explore)</span>
+                  <span>States with districts (Click to explore)</span>
                 </div>
               </>
             ) : (
@@ -552,7 +674,7 @@ const RegionSelectionPage = () => {
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: SELECTION_COLOR }} />
                   <span>Current Selection</span>
                 </div>
-                {regions.map((region) => (
+                {currentStateRegions.map((region) => (
                   <div key={region.id} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded" style={{ backgroundColor: region.color }} />
                     <span>{region.name}</span>
@@ -572,8 +694,13 @@ const RegionSelectionPage = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {selectedState
               ? `Create and manage regions in ${selectedState}`
-              : 'Select Andhra Pradesh to start creating regions'}
+              : 'Select a state to start creating regions'}
           </p>
+          {regions.length > 0 && !selectedState && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Total regions created: {regions.length} across {new Set(regions.map(r => r.state)).size} state(s)
+            </p>
+          )}
         </div>
 
         {/* Selection Content */}
@@ -598,11 +725,11 @@ const RegionSelectionPage = () => {
               </div>
               <h3 className="font-semibold text-lg mb-2">Select a State</h3>
               <p className="text-sm text-muted-foreground max-w-xs mb-4">
-                Click on <span className="text-green-600 font-medium">Andhra Pradesh</span> on the map to zoom in and start creating regions
+                Click on any <span className="text-green-600 font-medium">green highlighted state</span> on the map to zoom in and start creating regions
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <div className="w-3 h-3 rounded bg-green-400" />
-                <span>Andhra Pradesh is highlighted in green</span>
+                <span>States with district data available</span>
               </div>
             </div>
           ) : (
@@ -628,13 +755,15 @@ const RegionSelectionPage = () => {
                 />
               </div>
 
-              {/* Saved Regions Section */}
-              {regions.length > 0 && (
+              {/* Saved Regions Section (current state only) */}
+              {currentStateRegions.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold">Saved Regions ({regions.length})</h3>
+                  <h3 className="text-sm font-semibold">
+                    Saved Regions in {selectedState} ({currentStateRegions.length})
+                  </h3>
 
                   <div className="space-y-3">
-                    {regions.map((region) => (
+                    {currentStateRegions.map((region) => (
                       <RegionCard
                         key={region.id}
                         region={region}
@@ -653,7 +782,7 @@ const RegionSelectionPage = () => {
               )}
 
               {/* Empty State */}
-              {regions.length === 0 && selectedData.length === 0 && (
+              {currentStateRegions.length === 0 && selectedData.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
                     <svg
