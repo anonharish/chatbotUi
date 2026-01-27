@@ -16,7 +16,9 @@ import {
   DEFAULT_BORDER,
   HOVER_FILL,
   HOVER_BORDER,
+  STATE_CDN_SLUG_MAP,
   STATE_NAME_TO_CODE,
+  getStateDistrictsCdnUrl,
 } from './constants'
 import { RegionForm, RegionCard } from './components'
 
@@ -34,8 +36,8 @@ const INDIA_ZOOM = 5
 // India States GeoJSON URL (from a public CDN)
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
 
-// All India Districts GeoJSON (local file)
-const INDIA_DISTRICTS_URL = '/INDIA_DISTRICTS.geojson'
+// Cache for loaded state districts GeoJSON
+type StateDistrictsCache = Map<string, FeatureCollection>
 
 // Helper function to get bounds from a GeoJSON feature
 const getBoundsFromFeature = (feature: Feature): LatLngBounds | null => {
@@ -96,7 +98,9 @@ const MapController = ({
 const RegionSelectionPage = () => {
   // Map and view state
   const [indiaGeoData, setIndiaGeoData] = useState<FeatureCollection | null>(null)
-  const [allDistrictsData, setAllDistrictsData] = useState<FeatureCollection | null>(null)
+  // Cache for loaded state districts (persists when switching states)
+  const stateDistrictsCacheRef = useRef<StateDistrictsCache>(new Map())
+  const [currentStateDistricts, setCurrentStateDistricts] = useState<FeatureCollection | null>(null)
   const [districtsLoading, setDistrictsLoading] = useState(false)
   const [districtsLoadError, setDistrictsLoadError] = useState<string | null>(null)
   const [selectedState, setSelectedState] = useState<string | null>(null)
@@ -121,62 +125,58 @@ const RegionSelectionPage = () => {
       .catch((error) => console.error('Error loading India GeoJSON:', error))
   }, [])
 
-  // Load all districts when any state is clicked (lazy load once)
-  const loadAllDistricts = useCallback(() => {
-    if (allDistrictsData || districtsLoading) return
+  // Load districts for a specific state from CDN (cached per state)
+  const loadStateDistricts = useCallback((stateName: string) => {
+    // Check if already cached
+    const cached = stateDistrictsCacheRef.current.get(stateName)
+    if (cached) {
+      setCurrentStateDistricts(cached)
+      return
+    }
+    
+    // Get CDN URL for this state
+    const cdnUrl = getStateDistrictsCdnUrl(stateName)
+    if (!cdnUrl) {
+      console.warn(`No CDN URL for state: ${stateName}`)
+      setDistrictsLoadError(`District data not available for ${stateName}`)
+      return
+    }
     
     setDistrictsLoading(true)
     setDistrictsLoadError(null)
     
-    fetch(INDIA_DISTRICTS_URL)
+    fetch(cdnUrl)
       .then((response) => {
-        if (!response.ok) throw new Error('Failed to load districts data')
+        if (!response.ok) throw new Error(`Failed to load districts for ${stateName}`)
         return response.json()
       })
       .then((data: FeatureCollection) => {
-        setAllDistrictsData(data)
+        // Cache the data
+        stateDistrictsCacheRef.current.set(stateName, data)
+        setCurrentStateDistricts(data)
         setDistrictsLoading(false)
       })
       .catch((error) => {
-        console.error('Error loading districts GeoJSON:', error)
+        console.error(`Error loading ${stateName} districts:`, error)
         setDistrictsLoadError(error.message)
         setDistrictsLoading(false)
       })
-  }, [allDistrictsData, districtsLoading])
-
-  // Filter districts by selected state (memoized for performance)
-  const filteredDistrictsData = useMemo(() => {
-    if (!allDistrictsData || !selectedState) return null
-    
-    const stateCode = STATE_NAME_TO_CODE[selectedState]
-    if (!stateCode) return null
-    
-    const filteredFeatures = allDistrictsData.features.filter((feature) => {
-      const props = feature.properties as DistrictProperties
-      return props.statecode === stateCode
-    })
-    
-    return {
-      type: 'FeatureCollection' as const,
-      features: filteredFeatures,
-    }
-  }, [allDistrictsData, selectedState])
+  }, [])
 
   // Handle state click
   const handleStateClick = useCallback((stateName: string) => {
-    // Check if we have a state code mapping for this state
-    const stateCode = STATE_NAME_TO_CODE[stateName]
-    if (!stateCode) {
-      console.warn(`No state code found for: ${stateName}`)
+    // Check if we have CDN mapping for this state
+    if (!STATE_CDN_SLUG_MAP[stateName]) {
+      console.warn(`No CDN mapping found for: ${stateName}`)
       return
     }
     
     setIsTransitioning(true)
     setSelectedState(stateName)
-    loadAllDistricts()
+    loadStateDistricts(stateName)
     // Allow transition to complete before showing districts
     setTimeout(() => setIsTransitioning(false), 2000)
-  }, [loadAllDistricts])
+  }, [loadStateDistricts])
 
   // Handle back to India view
   const handleBackToIndia = useCallback(() => {
@@ -274,13 +274,15 @@ const RegionSelectionPage = () => {
     return map
   }, [regions])
 
-  // Helper to get district ID from properties
+  // Helper to get district ID from properties (supports multiple GeoJSON formats)
   const getDistrictId = useCallback((props: DistrictProperties): string => {
-    // For all-India format: use objectid or combine statecode + district
+    // CDN format: use dt_code + st_code
+    if (props.dt_code && props.st_code) return `${props.st_code}_${props.dt_code}`
+    // All-India format: use objectid or combine statecode + district
     if (props.objectid) return props.objectid
     if (props.statecode && props.district) return `${props.statecode}_${props.district}`
     // Fallback for old AP format
-    return props.district_id || props.NEW_DIST || ''
+    return props.district_id || props.NEW_DIST || `unknown_${props.district || ''}`
   }, [])
 
   // Helper to get district name from properties
@@ -290,8 +292,8 @@ const RegionSelectionPage = () => {
 
   const getDistrictName = useCallback(
     (districtId: string): string => {
-      if (!filteredDistrictsData) return districtId
-      for (const feature of filteredDistrictsData.features) {
+      if (!currentStateDistricts) return districtId
+      for (const feature of currentStateDistricts.features) {
         const props = feature.properties as DistrictProperties
         const id = getDistrictId(props)
         if (id === districtId) {
@@ -300,7 +302,7 @@ const RegionSelectionPage = () => {
       }
       return districtId
     },
-    [filteredDistrictsData, getDistrictId, getDistrictNameFromProps]
+    [currentStateDistricts, getDistrictId, getDistrictNameFromProps]
   )
 
   const toggleDistrictSelection = useCallback(
@@ -482,12 +484,12 @@ const RegionSelectionPage = () => {
   )
 
   const getSelectedDistrictData = (): DistrictData[] => {
-    if (!filteredDistrictsData) return []
+    if (!currentStateDistricts) return []
 
     const districtData: DistrictData[] = []
     const seenIds = new Set<string>()
 
-    filteredDistrictsData.features.forEach((feature) => {
+    currentStateDistricts.features.forEach((feature) => {
       const props = feature.properties as DistrictProperties
       const districtId = getDistrictId(props)
       const districtName = getDistrictNameFromProps(props)
@@ -509,16 +511,16 @@ const RegionSelectionPage = () => {
     return regions.filter((r) => r.state === selectedState)
   }, [regions, selectedState])
 
+  // Key for GeoJSON re-renders - exclude currentSelection to prevent full re-renders on each click
   const geoJsonKey = useMemo(() => {
     const regionKey = regions
       .map((r) => `${r.id}:${Array.from(r.districts).join(',')}`)
       .join('|')
-    const selectionKey = Array.from(currentSelection).join(',')
-    return `${selectedState}||${regionKey}||${selectionKey}`
-  }, [regions, currentSelection, selectedState])
+    return `${selectedState}||${regionKey}`
+  }, [regions, selectedState])
 
-  const isLoading = !indiaGeoData || (selectedState && !filteredDistrictsData && !districtsLoadError)
-  const showDistricts = selectedState && filteredDistrictsData && !isTransitioning
+  const isLoading = !indiaGeoData || (selectedState && !currentStateDistricts && !districtsLoadError)
+  const showDistricts = selectedState && currentStateDistricts && !isTransitioning
 
   return (
     <div className="flex h-screen bg-background">
@@ -533,7 +535,7 @@ const RegionSelectionPage = () => {
               </h2>
               <p className="text-xs text-muted-foreground">
                 {selectedState
-                  ? `Click on districts to select. ${filteredDistrictsData?.features.length || 0} districts available.`
+                  ? `Click on districts to select. ${currentStateDistricts?.features.length || 0} districts available.`
                   : 'Click on any highlighted state to explore its districts'}
               </p>
             </div>
@@ -592,10 +594,10 @@ const RegionSelectionPage = () => {
               )}
 
               {/* Districts Layer (shown when state is selected and not transitioning) */}
-              {showDistricts && filteredDistrictsData && (
+              {showDistricts && currentStateDistricts && (
                 <GeoJSON
                   key={`districts-${geoJsonKey}`}
-                  data={filteredDistrictsData}
+                  data={currentStateDistricts}
                   style={(feature) => {
                     const props = feature?.properties as DistrictProperties
                     const districtId = getDistrictId(props)
@@ -627,7 +629,7 @@ const RegionSelectionPage = () => {
                 <button
                   onClick={() => {
                     setDistrictsLoadError(null)
-                    loadAllDistricts()
+                    if (selectedState) loadStateDistricts(selectedState)
                   }}
                   className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md"
                 >

@@ -91,3 +91,55 @@ export const STATE_NAME_TO_CODE: Record<string, string> = Object.entries(STATE_C
   {}
 )
 
+// CDN base URL for per-state district GeoJSON files
+export const DISTRICTS_CDN_BASE = 'https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@ef25ebc/geojson/states'
+
+// State name to CDN slug mapping (lowercase with hyphens)
+export const STATE_CDN_SLUG_MAP: Record<string, string> = {
+  'Andhra Pradesh': 'andhra-pradesh',
+  'Arunachal Pradesh': 'arunachal-pradesh',
+  'Assam': 'assam',
+  'Bihar': 'bihar',
+  'Chhattisgarh': 'chhattisgarh',
+  'Goa': 'goa',
+  'Gujarat': 'gujarat',
+  'Haryana': 'haryana',
+  'Himachal Pradesh': 'himachal-pradesh',
+  'Jharkhand': 'jharkhand',
+  'Karnataka': 'karnataka',
+  'Kerala': 'kerala',
+  'Madhya Pradesh': 'madhya-pradesh',
+  'Maharashtra': 'maharashtra',
+  'Manipur': 'manipur',
+  'Meghalaya': 'meghalaya',
+  'Mizoram': 'mizoram',
+  'Nagaland': 'nagaland',
+  'Odisha': 'odisha',
+  'Punjab': 'punjab',
+  'Rajasthan': 'rajasthan',
+  'Sikkim': 'sikkim',
+  'Tamil Nadu': 'tamil-nadu',
+  'Telangana': 'telangana',
+  'Tripura': 'tripura',
+  'Uttar Pradesh': 'uttar-pradesh',
+  'Uttarakhand': 'uttarakhand',
+  'West Bengal': 'west-bengal',
+  // Union Territories
+  'Andaman and Nicobar Islands': 'andaman-and-nicobar-islands',
+  'Chandigarh': 'chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu': 'dadra-and-nagar-haveli-and-daman-and-diu',
+  'Delhi': 'delhi',
+  'Jammu and Kashmir': 'jammu-and-kashmir',
+  'Ladakh': 'ladakh',
+  'Lakshadweep': 'lakshadweep',
+  'Puducherry': 'puducherry',
+}
+
+// Helper to get CDN URL for a state's districts
+export const getStateDistrictsCdnUrl = (stateName: string): string | null => {
+  const slug = STATE_CDN_SLUG_MAP[stateName]
+  if (!slug) return null
+  return `${DISTRICTS_CDN_BASE}/${slug}.geojson`
+}
+
+
