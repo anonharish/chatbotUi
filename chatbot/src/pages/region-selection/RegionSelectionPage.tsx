@@ -49,48 +49,17 @@ const getBoundsFromFeature = (feature: Feature): LatLngBounds | null => {
   }
 }
 
-// Map controller component for smooth animations
+// Simple map controller - just provides map reference
 const MapController = ({ 
-  selectedState,
-  statesGeoData,
-  onMapReady 
+  onMapReady,
 }: { 
-  selectedState: string | null
-  statesGeoData: FeatureCollection | null
-  onMapReady: (map: LeafletMap) => void 
+  onMapReady: (map: LeafletMap) => void
 }) => {
   const map = useMap()
 
   useEffect(() => {
     onMapReady(map)
   }, [map, onMapReady])
-
-  useEffect(() => {
-    if (selectedState && statesGeoData) {
-      // Find the state feature and get its bounds
-      const stateFeature = statesGeoData.features.find((f) => {
-        const props = f.properties as StateProperties
-        return (props.ST_NM || props.name) === selectedState
-      })
-      
-      if (stateFeature) {
-        const bounds = getBoundsFromFeature(stateFeature)
-        if (bounds) {
-          map.flyToBounds(bounds, {
-            duration: 2,
-            padding: [20, 20],
-          })
-          return
-        }
-      }
-    } else if (selectedState === null) {
-      // Fly back to India view
-      map.flyTo(INDIA_CENTER, INDIA_ZOOM, {
-        duration: 2,
-        easeLinearity: 0.25,
-      })
-    }
-  }, [selectedState, statesGeoData, map])
 
   return null
 }
@@ -103,6 +72,7 @@ const RegionSelectionPage = () => {
   const [currentStateDistricts, setCurrentStateDistricts] = useState<FeatureCollection | null>(null)
   const [districtsLoading, setDistrictsLoading] = useState(false)
   const [districtsLoadError, setDistrictsLoadError] = useState<string | null>(null)
+  // Single state selection
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [hoveredState, setHoveredState] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -163,7 +133,7 @@ const RegionSelectionPage = () => {
       })
   }, [])
 
-  // Handle state click
+  // Handle state click - directly load districts and zoom
   const handleStateClick = useCallback((stateName: string) => {
     // Check if we have CDN mapping for this state
     if (!STATE_CDN_SLUG_MAP[stateName]) {
@@ -171,20 +141,32 @@ const RegionSelectionPage = () => {
       return
     }
     
-    setIsTransitioning(true)
+    // Set state and load districts directly
     setSelectedState(stateName)
-    loadStateDistricts(stateName)
-    // Allow transition to complete before showing districts
-    setTimeout(() => setIsTransitioning(false), 2000)
-  }, [loadStateDistricts])
-
-  // Handle back to India view
-  const handleBackToIndia = useCallback(() => {
     setIsTransitioning(true)
-    setSelectedState(null)
-    setCurrentSelection(new Set())
-    setTimeout(() => setIsTransitioning(false), 2000)
-  }, [])
+    setCurrentSelection(new Set()) // Clear selection when switching states
+    loadStateDistricts(stateName)
+    
+    // Zoom into the state for better view
+    if (mapRef.current && indiaGeoData) {
+      const stateFeature = indiaGeoData.features.find((f) => {
+        const props = f.properties as StateProperties
+        return (props.ST_NM || props.name) === stateName
+      })
+      
+      if (stateFeature) {
+        const bounds = getBoundsFromFeature(stateFeature)
+        if (bounds) {
+          mapRef.current.flyToBounds(bounds, {
+            duration: 1.0,
+            padding: [30, 30],
+          })
+        }
+      }
+    }
+    
+    setTimeout(() => setIsTransitioning(false), 1000)
+  }, [indiaGeoData, loadStateDistricts])
 
   // Map ready callback
   const handleMapReady = useCallback((map: LeafletMap) => {
@@ -456,10 +438,11 @@ const RegionSelectionPage = () => {
       })
 
       const region = districtToRegion.get(districtId)
+      const stateName = props.st_nm || props.statecode || ''
       let tooltipContent = `<div><strong>${districtName}</strong>`
       
-      if (selectedState) {
-        tooltipContent += `<br/><small class="text-muted-foreground">${selectedState}</small>`
+      if (stateName) {
+        tooltipContent += `<br/><small class="text-muted-foreground">${stateName}</small>`
       }
 
       if (region) {
@@ -480,8 +463,22 @@ const RegionSelectionPage = () => {
         className: 'district-tooltip',
       })
     },
-    [currentSelection, getDistrictStyle, toggleDistrictSelection, districtToRegion, getDistrictId, getDistrictNameFromProps, selectedState]
+    [currentSelection, getDistrictStyle, toggleDistrictSelection, districtToRegion, getDistrictId, getDistrictNameFromProps]
   )
+  
+  const allCachedDistricts = useMemo(() => {
+    const allFeatures: Feature[] = []
+    stateDistrictsCacheRef.current.forEach((data) => {
+      allFeatures.push(...data.features)
+    })
+    if (allFeatures.length === 0) return null
+    return { type: 'FeatureCollection' as const, features: allFeatures }
+  }, [regions]) // Re-compute when regions change
+
+  // Current state districts for district selection
+  const mergedDistrictsData = useMemo(() => {
+    return currentStateDistricts
+  }, [currentStateDistricts])
 
   const getSelectedDistrictData = (): DistrictData[] => {
     if (!currentStateDistricts) return []
@@ -493,9 +490,10 @@ const RegionSelectionPage = () => {
       const props = feature.properties as DistrictProperties
       const districtId = getDistrictId(props)
       const districtName = getDistrictNameFromProps(props)
+      const stateName = props.st_nm || props.statecode || selectedState || 'Unknown'
 
       if (currentSelection.has(districtId) && !seenIds.has(districtId)) {
-        districtData.push({ id: districtId, name: districtName, state: selectedState || undefined })
+        districtData.push({ id: districtId, name: districtName, state: stateName })
         seenIds.add(districtId)
       }
     })
@@ -505,19 +503,31 @@ const RegionSelectionPage = () => {
 
   const selectedData = getSelectedDistrictData()
 
-  // Filter regions for current state
-  const currentStateRegions = useMemo(() => {
-    if (!selectedState) return []
-    return regions.filter((r) => r.state === selectedState)
-  }, [regions, selectedState])
+  // Show ALL regions in sidebar (not filtered by current state)
+  const allRegions = regions
 
-  // Key for GeoJSON re-renders - exclude currentSelection to prevent full re-renders on each click
+  // Key for GeoJSON re-renders
   const geoJsonKey = useMemo(() => {
     const regionKey = regions
       .map((r) => `${r.id}:${Array.from(r.districts).join(',')}`)
       .join('|')
     return `${selectedState}||${regionKey}`
   }, [regions, selectedState])
+
+  // Style for rendering saved regions on map
+  const getRegionOverlayStyle = useCallback((districtId: string) => {
+    const region = districtToRegion.get(districtId)
+    if (region) {
+      return {
+        fillColor: region.color,
+        fillOpacity: 0.5,
+        color: region.color,
+        weight: 2,
+        opacity: 1,
+      }
+    }
+    return null // Don't render if not in a region
+  }, [districtToRegion])
 
   const isLoading = !indiaGeoData || (selectedState && !currentStateDistricts && !districtsLoadError)
   const showDistricts = selectedState && currentStateDistricts && !isTransitioning
@@ -536,20 +546,9 @@ const RegionSelectionPage = () => {
               <p className="text-xs text-muted-foreground">
                 {selectedState
                   ? `Click on districts to select. ${currentStateDistricts?.features.length || 0} districts available.`
-                  : 'Click on any highlighted state to explore its districts'}
+                  : 'Zoom in or click on any highlighted state'}
               </p>
             </div>
-            {selectedState && (
-              <button
-                onClick={handleBackToIndia}
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                Back to India
-              </button>
-            )}
           </div>
         </div>
 
@@ -576,34 +575,54 @@ const RegionSelectionPage = () => {
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               />
 
-              {/* Map Controller for animations */}
-              <MapController 
-                selectedState={selectedState} 
-                statesGeoData={indiaGeoData}
-                onMapReady={handleMapReady} 
-              />
+              {/* Map Controller - provides map reference */}
+              <MapController onMapReady={handleMapReady} />
 
-              {/* India States Layer (shown when no state selected or transitioning) */}
-              {indiaGeoData && !showDistricts && (
+              {/* India States Layer - ALWAYS visible as border overlay */}
+              {indiaGeoData && (
                 <GeoJSON
-                  key="india-states"
+                  key="india-states-border"
                   data={indiaGeoData}
-                  style={getStateStyle}
-                  onEachFeature={onEachState}
+                  style={showDistricts ? {
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 0.7,
+                  } : getStateStyle}
+                  onEachFeature={showDistricts ? undefined : onEachState}
                 />
               )}
 
-              {/* Districts Layer (shown when state is selected and not transitioning) */}
-              {showDistricts && currentStateDistricts && (
+              {/* Districts Layer (shown when states are selected and not transitioning) */}
+              {showDistricts && mergedDistrictsData && (
                 <GeoJSON
                   key={`districts-${geoJsonKey}`}
-                  data={currentStateDistricts}
+                  data={mergedDistrictsData}
                   style={(feature) => {
                     const props = feature?.properties as DistrictProperties
                     const districtId = getDistrictId(props)
                     return getDistrictStyle(districtId)
                   }}
                   onEachFeature={onEachDistrict}
+                />
+              )}
+
+              {/* Saved Regions Overlay - ALWAYS visible at all zoom levels */}
+              {allCachedDistricts && regions.length > 0 && (
+                <GeoJSON
+                  key={`regions-overlay-${geoJsonKey}`}
+                  data={allCachedDistricts}
+                  style={(feature) => {
+                    const props = feature?.properties as DistrictProperties
+                    const districtId = getDistrictId(props)
+                    const style = getRegionOverlayStyle(districtId)
+                    if (!style) {
+                      // Not part of any region - make invisible
+                      return { fillOpacity: 0, stroke: false }
+                    }
+                    return style
+                  }}
                 />
               )}
             </MapContainer>
@@ -622,7 +641,7 @@ const RegionSelectionPage = () => {
 
           {/* Error overlay */}
           {districtsLoadError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-[1000]">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-1000">
               <div className="bg-card p-4 rounded-lg shadow-lg text-center max-w-sm">
                 <p className="text-sm font-medium text-red-600 mb-2">Failed to load districts</p>
                 <p className="text-xs text-muted-foreground mb-3">{districtsLoadError}</p>
@@ -641,11 +660,11 @@ const RegionSelectionPage = () => {
 
           {/* Transition Overlay */}
           {isTransitioning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-[1000]">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-1000">
               <div className="bg-card p-4 rounded-lg shadow-lg text-center">
                 <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
                 <p className="text-sm font-medium">
-                  {selectedState ? `Flying to ${selectedState}...` : 'Returning to India...'}
+                  {selectedState ? `Loading ${selectedState}...` : 'Returning to India...'}
                 </p>
               </div>
             </div>
@@ -663,7 +682,7 @@ const RegionSelectionPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4ade80' }} />
-                  <span>States with districts (Click to explore)</span>
+                  <span>States with districts (Click to select)</span>
                 </div>
               </>
             ) : (
@@ -676,7 +695,7 @@ const RegionSelectionPage = () => {
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: SELECTION_COLOR }} />
                   <span>Current Selection</span>
                 </div>
-                {currentStateRegions.map((region) => (
+                {allRegions.filter(r => r.state === selectedState).map((region) => (
                   <div key={region.id} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded" style={{ backgroundColor: region.color }} />
                     <span>{region.name}</span>
@@ -695,7 +714,7 @@ const RegionSelectionPage = () => {
           <h1 className="text-xl font-bold">Region Manager</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {selectedState
-              ? `Create and manage regions in ${selectedState}`
+              ? `Creating regions in ${selectedState}`
               : 'Select a state to start creating regions'}
           </p>
           {regions.length > 0 && !selectedState && (
@@ -757,15 +776,15 @@ const RegionSelectionPage = () => {
                 />
               </div>
 
-              {/* Saved Regions Section (current state only) */}
-              {currentStateRegions.length > 0 && (
+              {/* Saved Regions Section - ALL REGIONS */}
+              {allRegions.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold">
-                    Saved Regions in {selectedState} ({currentStateRegions.length})
+                    Saved Regions ({allRegions.length})
                   </h3>
 
                   <div className="space-y-3">
-                    {currentStateRegions.map((region) => (
+                    {allRegions.map((region) => (
                       <RegionCard
                         key={region.id}
                         region={region}
@@ -784,7 +803,7 @@ const RegionSelectionPage = () => {
               )}
 
               {/* Empty State */}
-              {currentStateRegions.length === 0 && selectedData.length === 0 && (
+              {allRegions.length === 0 && selectedData.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
                     <svg
