@@ -628,6 +628,33 @@ const RegionSelectionPage = () => {
                     }
                     return style
                   }}
+                  onEachFeature={(feature, layer) => {
+                    const props = feature.properties as DistrictProperties
+                    const districtId = getDistrictId(props)
+                    const region = districtToRegion.get(districtId)
+                    
+                    if (region) {
+                      // Build region tooltip content
+                      let tooltipContent = `<div style="min-width: 150px;">`
+                      tooltipContent += `<strong style="color: ${region.color};">● ${region.name}</strong>`
+                      tooltipContent += `<br/><small style="opacity: 0.7;">State: ${region.state}</small>`
+                      tooltipContent += `<br/><small>${region.districts.size} district${region.districts.size !== 1 ? 's' : ''}</small>`
+                      
+                      if (region.regionalOfficer) {
+                        tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
+                      }
+                      if (region.intelligentOfficer) {
+                        tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
+                      }
+                      tooltipContent += '</div>'
+                      
+                      layer.bindTooltip(tooltipContent, {
+                        permanent: false,
+                        direction: 'top',
+                        className: 'region-tooltip',
+                      })
+                    }
+                  }}
                 />
               )}
             </MapContainer>
