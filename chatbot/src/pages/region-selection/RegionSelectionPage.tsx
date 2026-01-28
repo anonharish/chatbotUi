@@ -274,17 +274,20 @@ const RegionSelectionPage = () => {
 
   const getDistrictName = useCallback(
     (districtId: string): string => {
-      if (!currentStateDistricts) return districtId
-      for (const feature of currentStateDistricts.features) {
-        const props = feature.properties as DistrictProperties
-        const id = getDistrictId(props)
-        if (id === districtId) {
-          return getDistrictNameFromProps(props)
+      // Search through all cached state districts (works for regions from any state)
+      for (const [, data] of stateDistrictsCacheRef.current) {
+        for (const feature of data.features) {
+          const props = feature.properties as DistrictProperties
+          const id = getDistrictId(props)
+          if (id === districtId) {
+            return getDistrictNameFromProps(props)
+          }
         }
       }
+      // Fallback to ID if not found
       return districtId
     },
-    [currentStateDistricts, getDistrictId, getDistrictNameFromProps]
+    [getDistrictId, getDistrictNameFromProps]
   )
 
   const toggleDistrictSelection = useCallback(
