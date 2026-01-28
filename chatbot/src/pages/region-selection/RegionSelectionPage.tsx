@@ -174,6 +174,7 @@ const RegionSelectionPage = () => {
   }, [])
 
   // ==================== State Level Styling ====================
+  // Dark map style with glowing white borders
   const getStateStyle = useCallback((feature: Feature | undefined) => {
     const props = feature?.properties as StateProperties
     const stateName = props?.ST_NM || props?.name || ''
@@ -181,21 +182,23 @@ const RegionSelectionPage = () => {
     const hasStateCode = STATE_NAME_TO_CODE[stateName] !== undefined
 
     if (hasStateCode) {
+      // States with district data - cyan/light blue glow when hovered
       return {
-        fillColor: isHovered ? '#22c55e' : '#4ade80',
-        weight: isHovered ? 3 : 2,
-        opacity: 1,
-        color: '#15803d',
-        fillOpacity: isHovered ? 0.7 : 0.5,
+        fillColor: 'transparent',
+        weight: isHovered ? 2.5 : 1.5,
+        opacity: isHovered ? 1 : 0.7,
+        color: isHovered ? '#67e8f9' : 'rgba(255, 255, 255, 0.5)', // Cyan on hover, white normally
+        fillOpacity: isHovered ? 0.15 : 0,
       }
     }
 
+    // States without district data - dimmer white border
     return {
-      fillColor: isHovered ? '#60a5fa' : '#94a3b8',
-      weight: isHovered ? 2 : 1,
-      opacity: 0.8,
-      color: '#475569',
-      fillOpacity: isHovered ? 0.5 : 0.3,
+      fillColor: 'transparent',
+      weight: 1,
+      opacity: 0.4,
+      color: 'rgba(255, 255, 255, 0.3)',
+      fillOpacity: 0,
     }
   }, [hoveredState])
 
@@ -208,17 +211,26 @@ const RegionSelectionPage = () => {
       mouseover: (e: LeafletMouseEvent) => {
         setHoveredState(stateName)
         const target = e.target
+        // Add 3D projection CSS class
+        const element = target.getElement()
+        if (element) {
+          element.classList.add('state-selected')
+        }
         if (hasStateCode) {
+          // Dark theme: cyan glow with minimal fill
           target.setStyle({
-            fillColor: '#22c55e',
-            fillOpacity: 0.7,
-            weight: 3,
+            color: '#67e8f9', // Cyan border
+            fillColor: 'rgba(103, 232, 249, 0.1)',
+            fillOpacity: 0.15,
+            weight: 2.5,
           })
         } else {
+          // States without data: subtle white glow
           target.setStyle({
-            fillColor: '#60a5fa',
-            fillOpacity: 0.5,
-            weight: 2,
+            color: 'rgba(255, 255, 255, 0.6)',
+            fillColor: 'transparent',
+            fillOpacity: 0,
+            weight: 1.5,
           })
         }
         target.bringToFront()
@@ -226,6 +238,11 @@ const RegionSelectionPage = () => {
       mouseout: (e: LeafletMouseEvent) => {
         setHoveredState(null)
         const target = e.target
+        // Remove 3D projection CSS class
+        const element = target.getElement()
+        if (element) {
+          element.classList.remove('state-selected')
+        }
         target.setStyle(getStateStyle(feature))
       },
       click: () => {
@@ -428,6 +445,12 @@ const RegionSelectionPage = () => {
           const region = districtToRegion.get(districtId)
           const isSelected = currentSelection.has(districtId)
 
+          // Add 3D projection CSS class
+          const element = target.getElement()
+          if (element) {
+            element.classList.add('district-selected')
+          }
+
           if (!region && !isSelected) {
             target.setStyle({
               fillColor: HOVER_FILL,
@@ -439,6 +462,11 @@ const RegionSelectionPage = () => {
         mouseout: (e: LeafletMouseEvent) => {
           setHoveredDistrict(null)
           const target = e.target
+          // Remove 3D projection CSS class
+          const element = target.getElement()
+          if (element) {
+            element.classList.remove('district-selected')
+          }
           target.setStyle(getDistrictStyle(districtId))
         },
         click: () => {
@@ -534,334 +562,432 @@ const RegionSelectionPage = () => {
     return null // Don't render if not in a region
   }, [districtToRegion])
 
+  // Computed values
   const isLoading = !indiaGeoData || (selectedState && !currentStateDistricts && !districtsLoadError)
   const showDistricts = selectedState && currentStateDistricts && !isTransitioning
 
+  // UI State
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mapStyle, setMapStyle] = useState<'satellite' | 'streets'>('streets') // Default to dark theme
+
+  // Handle back to India
+  const handleBackToIndia = useCallback(() => {
+    setSelectedState(null)
+    setCurrentStateDistricts(null)
+    setCurrentSelection(new Set())
+    setIsTransitioning(true)
+    
+    if (mapRef.current) {
+      mapRef.current.flyTo(INDIA_CENTER, INDIA_ZOOM, {
+        duration: 1.5,
+      })
+    }
+    
+    setTimeout(() => setIsTransitioning(false), 1500)
+  }, [])
+
+  // Custom zoom handlers
+  const handleZoomIn = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.zoomIn(1, { animate: true })
+    }
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.zoomOut(1, { animate: true })
+    }
+  }, [])
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Left Side - Map (60%) */}
-      <div className="w-[60%] flex flex-col border-r">
-        {/* Map Header */}
-        <div className="p-3 border-b bg-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">
-                {selectedState ? `${selectedState} Districts` : 'India - Select a State'}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {selectedState
-                  ? `Click on districts to select. ${currentStateDistricts?.features.length || 0} districts available.`
-                  : 'Zoom in or click on any highlighted state'}
-              </p>
+    <div className="relative h-screen w-full overflow-hidden bg-slate-900">
+      {/* Fullscreen Map */}
+      <div className="absolute inset-0">
+        {isLoading && !indiaGeoData ? (
+          <div className="flex items-center justify-center h-full bg-slate-900">
+            <div className="text-center animate-fade-in">
+              <div className="earth-spinner mx-auto mb-4" />
+              <p className="text-white/70 text-lg">Loading map data...</p>
             </div>
           </div>
-        </div>
-
-        {/* Map Container */}
-        <div className="flex-1 relative">
-          {isLoading && !indiaGeoData ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading map data...</p>
-              </div>
-            </div>
-          ) : (
-            <MapContainer
-              center={INDIA_CENTER}
-              zoom={INDIA_ZOOM}
-              style={{ height: '100%', width: '100%' }}
-              scrollWheelZoom={true}
-              zoomControl={true}
-            >
-              {/* Satellite Tile Layer */}
+        ) : (
+          <MapContainer
+            center={INDIA_CENTER}
+            zoom={INDIA_ZOOM}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={true}
+            zoomControl={false}
+            attributionControl={true}
+          >
+            {/* Tile Layer with style toggle - DARK THEMES */}
+            {mapStyle === 'satellite' ? (
+              // ESRI World Imagery - dark satellite
               <TileLayer
                 attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               />
-
-              {/* Map Controller - provides map reference */}
-              <MapController onMapReady={handleMapReady} />
-
-              {/* India States Layer - ALWAYS visible as border overlay */}
-              {indiaGeoData && (
-                <GeoJSON
-                  key="india-states-border"
-                  data={indiaGeoData}
-                  style={showDistricts ? {
-                    fillColor: 'transparent',
-                    fillOpacity: 0,
-                    color: '#ffffff',
-                    weight: 2,
-                    opacity: 0.7,
-                  } : getStateStyle}
-                  onEachFeature={showDistricts ? undefined : onEachState}
-                />
-              )}
-
-              {/* Districts Layer (shown when states are selected and not transitioning) */}
-              {showDistricts && mergedDistrictsData && (
-                <GeoJSON
-                  key={`districts-${geoJsonKey}`}
-                  data={mergedDistrictsData}
-                  style={(feature) => {
-                    const props = feature?.properties as DistrictProperties
-                    const districtId = getDistrictId(props)
-                    return getDistrictStyle(districtId)
-                  }}
-                  onEachFeature={onEachDistrict}
-                />
-              )}
-
-              {/* Saved Regions Overlay - ALWAYS visible at all zoom levels */}
-              {allCachedDistricts && regions.length > 0 && (
-                <GeoJSON
-                  key={`regions-overlay-${geoJsonKey}`}
-                  data={allCachedDistricts}
-                  style={(feature) => {
-                    const props = feature?.properties as DistrictProperties
-                    const districtId = getDistrictId(props)
-                    const style = getRegionOverlayStyle(districtId)
-                    if (!style) {
-                      // Not part of any region - make invisible
-                      return { fillOpacity: 0, stroke: false }
-                    }
-                    return style
-                  }}
-                  onEachFeature={(feature, layer) => {
-                    const props = feature.properties as DistrictProperties
-                    const districtId = getDistrictId(props)
-                    const region = districtToRegion.get(districtId)
-                    
-                    if (region) {
-                      // Build region tooltip content
-                      let tooltipContent = `<div style="min-width: 150px;">`
-                      tooltipContent += `<strong style="color: ${region.color};">● ${region.name}</strong>`
-                      tooltipContent += `<br/><small style="opacity: 0.7;">State: ${region.state}</small>`
-                      tooltipContent += `<br/><small>${region.districts.size} district${region.districts.size !== 1 ? 's' : ''}</small>`
-                      
-                      if (region.regionalOfficer) {
-                        tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
-                      }
-                      if (region.intelligentOfficer) {
-                        tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
-                      }
-                      tooltipContent += '</div>'
-                      
-                      layer.bindTooltip(tooltipContent, {
-                        permanent: false,
-                        direction: 'top',
-                        className: 'region-tooltip',
-                      })
-                    }
-                  }}
-                />
-              )}
-            </MapContainer>
-          )}
-
-          {/* Loading overlay for districts */}
-          {districtsLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-[1000]">
-              <div className="bg-card p-4 rounded-lg shadow-lg text-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
-                <p className="text-sm font-medium">Loading districts data...</p>
-                <p className="text-xs text-muted-foreground">This may take a moment (74MB file)</p>
-              </div>
-            </div>
-          )}
-
-          {/* Error overlay */}
-          {districtsLoadError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-1000">
-              <div className="bg-card p-4 rounded-lg shadow-lg text-center max-w-sm">
-                <p className="text-sm font-medium text-red-600 mb-2">Failed to load districts</p>
-                <p className="text-xs text-muted-foreground mb-3">{districtsLoadError}</p>
-                <button
-                  onClick={() => {
-                    setDistrictsLoadError(null)
-                    if (selectedState) loadStateDistricts(selectedState)
-                  }}
-                  className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md"
-                >
-                  Retry
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Transition Overlay */}
-          {isTransitioning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-1000">
-              <div className="bg-card p-4 rounded-lg shadow-lg text-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-2" />
-                <p className="text-sm font-medium">
-                  {selectedState ? `Loading ${selectedState}...` : 'Returning to India...'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Legend */}
-        <div className="p-3 border-t bg-card">
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
-            {!selectedState ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: '#94a3b8' }} />
-                  <span>States (no district data)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: '#4ade80' }} />
-                  <span>States with districts (Click to select)</span>
-                </div>
-              </>
             ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: DEFAULT_FILL }} />
-                  <span>Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: SELECTION_COLOR }} />
-                  <span>Current Selection</span>
-                </div>
-                {allRegions.filter(r => r.state === selectedState).map((region) => (
-                  <div key={region.id} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded" style={{ backgroundColor: region.color }} />
-                    <span>{region.name}</span>
-                  </div>
-                ))}
-              </>
+              // CartoDB Dark Matter - pure dark map
+              <TileLayer
+                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+              />
             )}
-          </div>
-        </div>
+
+            {/* Map Controller */}
+            <MapController onMapReady={handleMapReady} />
+
+            {/* India States Layer */}
+            {indiaGeoData && (
+              <GeoJSON
+                key={`india-states-${showDistricts ? 'border' : 'selectable'}`}
+                data={indiaGeoData}
+                style={showDistricts ? {
+                  fillColor: 'transparent',
+                  fillOpacity: 0,
+                  color: 'rgba(255,255,255,0.5)',
+                  weight: 2,
+                  opacity: 0.7,
+                } : getStateStyle}
+                onEachFeature={showDistricts ? undefined : onEachState}
+              />
+            )}
+
+            {/* Districts Layer */}
+            {showDistricts && mergedDistrictsData && (
+              <GeoJSON
+                key={`districts-${geoJsonKey}`}
+                data={mergedDistrictsData}
+                style={(feature) => {
+                  const props = feature?.properties as DistrictProperties
+                  const districtId = getDistrictId(props)
+                  return getDistrictStyle(districtId)
+                }}
+                onEachFeature={onEachDistrict}
+              />
+            )}
+
+            {/* Saved Regions Overlay */}
+            {showDistricts && allCachedDistricts && regions.length > 0 && (
+              <GeoJSON
+                key={`regions-overlay-${geoJsonKey}`}
+                data={allCachedDistricts}
+                style={(feature) => {
+                  const props = feature?.properties as DistrictProperties
+                  const districtId = getDistrictId(props)
+                  const style = getRegionOverlayStyle(districtId)
+                  if (!style) return { fillOpacity: 0, stroke: false }
+                  return style
+                }}
+                onEachFeature={(feature, layer) => {
+                  const props = feature.properties as DistrictProperties
+                  const districtId = getDistrictId(props)
+                  const region = districtToRegion.get(districtId)
+                  if (region) {
+                    let tooltipContent = `<div style="min-width: 150px;">`
+                    tooltipContent += `<strong style="color: ${region.color};">● ${region.name}</strong>`
+                    tooltipContent += `<br/><small style="opacity: 0.7;">State: ${region.state}</small>`
+                    tooltipContent += `<br/><small>${region.districts.size} district${region.districts.size !== 1 ? 's' : ''}</small>`
+                    if (region.regionalOfficer) tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
+                    if (region.intelligentOfficer) tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
+                    tooltipContent += '</div>'
+                    layer.bindTooltip(tooltipContent, { permanent: false, direction: 'top', className: 'earth-tooltip' })
+                  }
+                }}
+              />
+            )}
+          </MapContainer>
+        )}
       </div>
 
-      {/* Right Side - Selection Panel (40%) */}
-      <div className="w-[40%] flex flex-col bg-card">
-        {/* Panel Header */}
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold">Region Manager</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {selectedState
-              ? `Creating regions in ${selectedState}`
-              : 'Select a state to start creating regions'}
-          </p>
-          {regions.length > 0 && !selectedState && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Total regions created: {regions.length} across {new Set(regions.map(r => r.state)).size} state(s)
-            </p>
-          )}
-        </div>
-
-        {/* Selection Content */}
-        <div className="flex-1 overflow-auto p-4 space-y-6">
-          {!selectedState ? (
-            // No state selected - show instructions
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-20 h-20 mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="text-green-600 dark:text-green-400"
-                >
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Select a State</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mb-4">
-                Click on any <span className="text-green-600 font-medium">green highlighted state</span> on the map to zoom in and start creating regions
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="w-3 h-3 rounded bg-green-400" />
-                <span>States with district data available</span>
-              </div>
-            </div>
-          ) : (
+      {/* Top Left - Location Breadcrumb */}
+      <div className="absolute top-4 left-4 z-[1000] animate-slide-in-left">
+        <div className="location-breadcrumb">
+          <div 
+            className="location-breadcrumb-item"
+            onClick={handleBackToIndia}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            <span>India</span>
+          </div>
+          {selectedState && (
             <>
-              {/* Current Selection Section */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: SELECTION_COLOR }} />
-                  New Region Selection
-                </h3>
-
-                <RegionForm
-                  selectedDistricts={selectedData}
-                  regionName={regionName}
-                  regionalOfficer={regionalOfficer}
-                  intelligentOfficer={intelligentOfficer}
-                  onRegionNameChange={setRegionName}
-                  onRegionalOfficerChange={setRegionalOfficer}
-                  onIntelligentOfficerChange={setIntelligentOfficer}
-                  onRemoveDistrict={removeFromSelection}
-                  onClear={clearSelection}
-                  onSave={saveRegion}
-                />
+              <span className="location-breadcrumb-separator">›</span>
+              <div className="location-breadcrumb-item">
+                <span className="text-green-400">{selectedState}</span>
               </div>
-
-              {/* Saved Regions Section - ALL REGIONS */}
-              {allRegions.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold">
-                    Saved Regions ({allRegions.length})
-                  </h3>
-
-                  <div className="space-y-3">
-                    {allRegions.map((region) => (
-                      <RegionCard
-                        key={region.id}
-                        region={region}
-                        getDistrictName={getDistrictName}
-                        onDelete={deleteRegion}
-                        onUpdateName={updateRegionName}
-                        onUpdateRegionalOfficer={updateRegionalOfficer}
-                        onUpdateIntelligentOfficer={updateIntelligentOfficer}
-                        isEditing={editingRegionId === region.id}
-                        onEditStart={setEditingRegionId}
-                        onEditEnd={() => setEditingRegionId(null)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {allRegions.length === 0 && selectedData.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      className="text-muted-foreground"
-                    >
-                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
-                  </div>
-                  <h3 className="font-semibold text-lg mb-1">No Regions Created</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Select districts from the map, name your region, assign officers, and save
-                  </p>
-                </div>
-              )}
             </>
           )}
         </div>
       </div>
+
+      {/* Top Right - Map Controls */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 animate-slide-in-right">
+        {/* Zoom Controls */}
+        <button onClick={handleZoomIn} className="map-control-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button onClick={handleZoomOut} className="map-control-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <div className="w-full h-px bg-white/20" />
+        {/* Map Style Toggle */}
+        <button 
+          onClick={() => setMapStyle(s => s === 'satellite' ? 'streets' : 'satellite')} 
+          className="map-control-btn"
+          title={mapStyle === 'satellite' ? 'Switch to Streets' : 'Switch to Satellite'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M9 21V9" />
+          </svg>
+        </button>
+        {/* Toggle Sidebar */}
+        <button 
+          onClick={() => setSidebarOpen(s => !s)} 
+          className="map-control-btn"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="15" y1="3" x2="15" y2="21" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Bottom Left - Selection Badge (when items selected) */}
+      {currentSelection.size > 0 && (
+        <div className="absolute bottom-4 left-4 z-[1000] animate-slide-in-up">
+          <div className="selection-badge animate-pulse-glow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span>{currentSelection.size} district{currentSelection.size !== 1 ? 's' : ''} selected</span>
+          </div>
+        </div>
+      )}
+
+      {/* Right Sidebar - Floating Panel */}
+      <div 
+        className={`absolute top-4 bottom-4 right-16 w-96 z-[1000] transition-all duration-500 ease-out ${
+          sidebarOpen ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
+        }`}
+      >
+        <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden">
+          {/* Panel Header */}
+          <div className="p-5 border-b border-white/10">
+            <h1 className="text-xl font-bold text-white flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </div>
+              Region Manager
+            </h1>
+            <p className="text-white/60 text-sm mt-2">
+              {selectedState ? `Creating regions in ${selectedState}` : 'Select a state to begin'}
+            </p>
+          </div>
+
+          {/* Panel Content */}
+          <div className="flex-1 overflow-auto p-5 space-y-5 region-panel">
+            {!selectedState ? (
+              /* No state selected */
+              <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                <div className="w-20 h-20 mb-5 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center animate-float">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-green-400">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold text-lg text-white mb-2">Select a State</h3>
+                <p className="text-white/60 text-sm max-w-xs mb-5">
+                  Click on any <span className="text-green-400 font-medium">highlighted state</span> on the map to zoom in and create regions
+                </p>
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                  <span>States with district data</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* New Region Form */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
+                    New Region
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={regionName}
+                      onChange={(e) => setRegionName(e.target.value)}
+                      placeholder="Region name..."
+                      className="w-full px-4 py-3 text-sm bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                    />
+                    <input
+                      type="text"
+                      value={regionalOfficer}
+                      onChange={(e) => setRegionalOfficer(e.target.value)}
+                      placeholder="Regional Officer..."
+                      className="w-full px-4 py-3 text-sm bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                    />
+                    <input
+                      type="text"
+                      value={intelligentOfficer}
+                      onChange={(e) => setIntelligentOfficer(e.target.value)}
+                      placeholder="Intelligent Officer..."
+                      className="w-full px-4 py-3 text-sm bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                    />
+                  </div>
+
+                  {/* Selected Districts Preview */}
+                  {selectedData.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 bg-white/5 rounded-xl">
+                      {selectedData.slice(0, 5).map((d) => (
+                        <span 
+                          key={d.id} 
+                          className="px-3 py-1 text-xs bg-purple-500/30 text-purple-200 rounded-full cursor-pointer hover:bg-red-500/30 transition-colors"
+                          onClick={() => removeFromSelection(d.id)}
+                        >
+                          {d.name} ×
+                        </span>
+                      ))}
+                      {selectedData.length > 5 && (
+                        <span className="px-3 py-1 text-xs text-white/50">
+                          +{selectedData.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={clearSelection}
+                      className="flex-1 px-4 py-3 text-sm bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={saveRegion}
+                      disabled={!regionName.trim() || currentSelection.size === 0}
+                      className="flex-1 quick-action-btn disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                      </svg>
+                      Save Region
+                    </button>
+                  </div>
+                </div>
+
+                {/* Saved Regions */}
+                {allRegions.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-white">
+                      Saved Regions ({allRegions.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {allRegions.map((region) => (
+                        <div 
+                          key={region.id}
+                          className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: region.color }} />
+                              <span className="font-medium text-white">{region.name}</span>
+                            </div>
+                            <button
+                              onClick={() => deleteRegion(region.id)}
+                              className="p-1 hover:bg-red-500/20 rounded text-red-400 transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="text-xs text-white/50 space-y-1">
+                            <p>{region.state} • {region.districts.size} districts</p>
+                            {region.regionalOfficer && <p>RO: {region.regionalOfficer}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Panel Footer - Legend */}
+          <div className="p-4 border-t border-white/10">
+            <div className="flex flex-wrap gap-3 text-xs text-white/60">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-400" />
+                <span>Available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500" />
+                <span>Selected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading Overlay */}
+      {(districtsLoading || isTransitioning) && (
+        <div className="absolute inset-0 z-[1100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel rounded-2xl p-8 text-center">
+            <div className="earth-spinner mx-auto mb-4" />
+            <p className="text-white font-medium">
+              {isTransitioning 
+                ? selectedState ? `Flying to ${selectedState}...` : 'Flying to India...'
+                : 'Loading districts...'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Overlay */}
+      {districtsLoadError && (
+        <div className="absolute inset-0 z-[1100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel rounded-2xl p-8 text-center max-w-sm">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <p className="text-white font-medium mb-2">Failed to load districts</p>
+            <p className="text-white/60 text-sm mb-4">{districtsLoadError}</p>
+            <button
+              onClick={() => {
+                setDistrictsLoadError(null)
+                if (selectedState) loadStateDistricts(selectedState)
+              }}
+              className="quick-action-btn"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
