@@ -257,9 +257,15 @@ const RegionSelectionPage = () => {
   }, [regions])
 
   // Helper to get district ID from properties (supports multiple GeoJSON formats)
+  // IMPORTANT: Include district name to ensure uniqueness (some dt_codes are reused across districts)
   const getDistrictId = useCallback((props: DistrictProperties): string => {
-    // CDN format: use dt_code + st_code
-    if (props.dt_code && props.st_code) return `${props.st_code}_${props.dt_code}`
+    // CDN format: use st_code + dt_code + district name for uniqueness
+    if (props.dt_code && props.st_code) {
+      const districtName = props.district || props.district_name || ''
+      // Normalize district name for ID (lowercase, remove spaces)
+      const normalizedName = districtName.toLowerCase().replace(/\s+/g, '_')
+      return `${props.st_code}_${props.dt_code}_${normalizedName}`
+    }
     // All-India format: use objectid or combine statecode + district
     if (props.objectid) return props.objectid
     if (props.statecode && props.district) return `${props.statecode}_${props.district}`
@@ -440,29 +446,25 @@ const RegionSelectionPage = () => {
         },
       })
 
+      // Build tooltip content with district info
       const region = districtToRegion.get(districtId)
       const stateName = props.st_nm || props.statecode || ''
       let tooltipContent = `<div><strong>${districtName}</strong>`
       
       if (stateName) {
-        tooltipContent += `<br/><small class="text-muted-foreground">${stateName}</small>`
+        tooltipContent += `<br/><small style="opacity: 0.7">${stateName}</small>`
       }
 
       if (region) {
-        tooltipContent += `<br/><span style="color: ${region.color};">● Region: ${region.name}</span>`
-        if (region.regionalOfficer) {
-          tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
-        }
-        if (region.intelligentOfficer) {
-          tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
-        }
+        tooltipContent += `<br/><span style="color: ${region.color};">● ${region.name}</span>`
       }
 
       tooltipContent += '</div>'
 
+      // Tooltip shows on hover (not permanent)
       layer.bindTooltip(tooltipContent, {
         permanent: false,
-        direction: 'center',
+        direction: 'top',
         className: 'district-tooltip',
       })
     },
