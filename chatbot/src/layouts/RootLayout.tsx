@@ -1,34 +1,52 @@
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 
 export default function RootLayout() {
+  const location = useLocation()
+  
+  // Check if we're on the region-selection page (fullscreen mode)
+  const isFullscreenPage = location.pathname === '/region-selection'
+  
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center px-4">
-          <div className="flex items-center space-x-2">
+      {/* Header - Glassmorphic for fullscreen pages */}
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isFullscreenPage 
+            ? 'bg-black/30 backdrop-blur-md border-b border-white/10' 
+            : 'bg-background/95 backdrop-blur border-b border-border supports-[backdrop-filter]:bg-background/60'
+        }`}
+      >
+        <div className={`flex h-14 items-center ${isFullscreenPage ? 'px-6' : 'container mx-auto px-4'}`}>
+          <div className="flex items-center space-x-3">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center">
               <span className="text-white text-sm font-bold">DA</span>
             </div>
-            <span className="text-xl font-bold">Demo App</span>
+            <span className={`text-xl font-bold ${isFullscreenPage ? 'text-white' : ''}`}>
+              Demo App
+            </span>
           </div>
+          
+          {/* Breadcrumb for region-selection */}
+          {isFullscreenPage && (
+            <div className="ml-4 flex items-center text-sm text-white/60">
+              <span className="mx-2">›</span>
+              <span className="text-white/80">Region Selection</span>
+            </div>
+          )}
+          
           <nav className="ml-auto flex items-center space-x-4">
             {/* Add navigation items here */}
           </nav>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="container mx-auto px-4 py-6">
+      {/* Main content - No padding for fullscreen pages */}
+      <main className={isFullscreenPage 
+        ? 'pt-14' // Only add padding-top for fixed header
+        : 'container mx-auto px-4 py-6 pt-20'
+      }>
         <Outlet />
       </main>
-
-      {/* Footer */}
-      {/* <footer className="border-t border-border py-4 absolute bottom-0 w-full">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Demo App. All rights reserved.
-        </div>
-      </footer> */}
     </div>
   )
 }

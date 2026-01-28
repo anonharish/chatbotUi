@@ -600,11 +600,11 @@ const RegionSelectionPage = () => {
   }, [])
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-slate-900">
+    <div className="relative h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-black">
       {/* Fullscreen Map */}
       <div className="absolute inset-0">
         {isLoading && !indiaGeoData ? (
-          <div className="flex items-center justify-center h-full bg-slate-900">
+          <div className="flex items-center justify-center h-full bg-black">
             <div className="text-center animate-fade-in">
               <div className="earth-spinner mx-auto mb-4" />
               <p className="text-white/70 text-lg">Loading map data...</p>
@@ -724,26 +724,42 @@ const RegionSelectionPage = () => {
         </div>
       </div>
 
-      {/* Top Right - Map Controls */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 animate-slide-in-right">
-        {/* Zoom Controls */}
+      {/* Bottom Left - Zoom Controls */}
+      <div className="absolute left-4 bottom-4 z-[1000] flex flex-col gap-2 animate-slide-in-left">
+        {/* Zoom In */}
         <button onClick={handleZoomIn} className="map-control-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
+        {/* Zoom Out */}
         <button onClick={handleZoomOut} className="map-control-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
-        <div className="w-full h-px bg-white/20" />
+        <div className="w-full h-px bg-white/20 my-1" />
+        {/* Info button */}
+        <button 
+          className="map-control-btn"
+          title="Information"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Top Right - Additional Controls */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 animate-slide-in-right">
         {/* Map Style Toggle */}
         <button 
           onClick={() => setMapStyle(s => s === 'satellite' ? 'streets' : 'satellite')} 
           className="map-control-btn"
-          title={mapStyle === 'satellite' ? 'Switch to Streets' : 'Switch to Satellite'}
+          title={mapStyle === 'satellite' ? 'Switch to Dark' : 'Switch to Satellite'}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -764,7 +780,7 @@ const RegionSelectionPage = () => {
 
       {/* Bottom Left - Selection Badge (when items selected) */}
       {currentSelection.size > 0 && (
-        <div className="absolute bottom-4 left-4 z-[1000] animate-slide-in-up">
+        <div className="absolute bottom-4 left-16 z-[1000] animate-slide-in-up">
           <div className="selection-badge animate-pulse-glow">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
