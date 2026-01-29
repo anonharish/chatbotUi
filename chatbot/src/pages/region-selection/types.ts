@@ -17,6 +17,7 @@ export interface DistrictProperties {
   district_name?: string
   district_id?: string
   NEW_DIST?: string
+  uniqueId?: string // Added for Globe interactions
 }
 
 export interface Region {

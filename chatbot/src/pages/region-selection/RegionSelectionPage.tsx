@@ -1,11 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { MapContainer, GeoJSON, TileLayer, useMap } from 'react-leaflet'
 import type { FeatureCollection, Feature } from 'geojson'
-import type { Layer, LeafletMouseEvent, Map as LeafletMap, LatLngBounds } from 'leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-
-import type { Region, DistrictProperties, DistrictData } from './types'
 import {
   generateId,
   getNextColor,
@@ -17,10 +11,9 @@ import {
   HOVER_FILL,
   HOVER_BORDER,
   STATE_CDN_SLUG_MAP,
-  STATE_NAME_TO_CODE,
   getStateDistrictsCdnUrl,
 } from './constants'
-import { RegionForm, RegionCard } from './components'
+import { GlobeVisualization } from './components/GlobeVisualization' // Import the new component
 
 // Types for state properties
 interface StateProperties {
@@ -29,54 +22,28 @@ interface StateProperties {
   ST_NM?: string
 }
 
-// India center coordinates
-const INDIA_CENTER: [number, number] = [22.5937, 78.9629]
-const INDIA_ZOOM = 5
+import type { Region, DistrictData, DistrictProperties } from './types'
 
-// India States GeoJSON URL (from a public CDN)
+// India States GeoJSON URL
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
 
 // Cache for loaded state districts GeoJSON
 type StateDistrictsCache = Map<string, FeatureCollection>
 
-// Helper function to get bounds from a GeoJSON feature
-const getBoundsFromFeature = (feature: Feature): LatLngBounds | null => {
-  try {
-    const layer = L.geoJSON(feature)
-    return layer.getBounds()
-  } catch {
-    return null
-  }
-}
-
-// Simple map controller - just provides map reference
-const MapController = ({ 
-  onMapReady,
-}: { 
-  onMapReady: (map: LeafletMap) => void
-}) => {
-  const map = useMap()
-
-  useEffect(() => {
-    onMapReady(map)
-  }, [map, onMapReady])
-
-  return null
-}
-
 const RegionSelectionPage = () => {
   // Map and view state
   const [indiaGeoData, setIndiaGeoData] = useState<FeatureCollection | null>(null)
-  // Cache for loaded state districts (persists when switching states)
+  
+  // Cache for loaded state districts
   const stateDistrictsCacheRef = useRef<StateDistrictsCache>(new Map())
   const [currentStateDistricts, setCurrentStateDistricts] = useState<FeatureCollection | null>(null)
   const [districtsLoading, setDistrictsLoading] = useState(false)
   const [districtsLoadError, setDistrictsLoadError] = useState<string | null>(null)
+  
   // Single state selection
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [hoveredState, setHoveredState] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const mapRef = useRef<LeafletMap | null>(null)
 
   // Region management state
   const [regions, setRegions] = useState<Region[]>([])
@@ -85,8 +52,7 @@ const RegionSelectionPage = () => {
   const [regionalOfficer, setRegionalOfficer] = useState('')
   const [intelligentOfficer, setIntelligentOfficer] = useState('')
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
-  const [editingRegionId, setEditingRegionId] = useState<string | null>(null)
-
+  
   // Load India states GeoJSON
   useEffect(() => {
     fetch(INDIA_STATES_URL)
@@ -95,16 +61,14 @@ const RegionSelectionPage = () => {
       .catch((error) => console.error('Error loading India GeoJSON:', error))
   }, [])
 
-  // Load districts for a specific state from CDN (cached per state)
+  // Load districts for a specific state
   const loadStateDistricts = useCallback((stateName: string) => {
-    // Check if already cached
     const cached = stateDistrictsCacheRef.current.get(stateName)
     if (cached) {
       setCurrentStateDistricts(cached)
       return
     }
     
-    // Get CDN URL for this state
     const cdnUrl = getStateDistrictsCdnUrl(stateName)
     if (!cdnUrl) {
       console.warn(`No CDN URL for state: ${stateName}`)
@@ -121,7 +85,6 @@ const RegionSelectionPage = () => {
         return response.json()
       })
       .then((data: FeatureCollection) => {
-        // Cache the data
         stateDistrictsCacheRef.current.set(stateName, data)
         setCurrentStateDistricts(data)
         setDistrictsLoading(false)
@@ -133,136 +96,24 @@ const RegionSelectionPage = () => {
       })
   }, [])
 
-  // Handle state click - directly load districts and zoom
+  // Handle state click
   const handleStateClick = useCallback((stateName: string) => {
-    // Check if we have CDN mapping for this state
     if (!STATE_CDN_SLUG_MAP[stateName]) {
       console.warn(`No CDN mapping found for: ${stateName}`)
       return
     }
     
-    // Set state and load districts directly
     setSelectedState(stateName)
     setIsTransitioning(true)
-    setCurrentSelection(new Set()) // Clear selection when switching states
+    setCurrentSelection(new Set())
+    setSidebarOpen(true) // specific change: open sidebar
     loadStateDistricts(stateName)
     
-    // Zoom into the state for better view
-    if (mapRef.current && indiaGeoData) {
-      const stateFeature = indiaGeoData.features.find((f) => {
-        const props = f.properties as StateProperties
-        return (props.ST_NM || props.name) === stateName
-      })
-      
-      if (stateFeature) {
-        const bounds = getBoundsFromFeature(stateFeature)
-        if (bounds) {
-          mapRef.current.flyToBounds(bounds, {
-            duration: 1.0,
-            padding: [30, 30],
-          })
-        }
-      }
-    }
-    
+    // Globe component handles flying/zooming based on state change automatically (or we can trigger it)
     setTimeout(() => setIsTransitioning(false), 1000)
-  }, [indiaGeoData, loadStateDistricts])
+  }, [loadStateDistricts])
 
-  // Map ready callback
-  const handleMapReady = useCallback((map: LeafletMap) => {
-    mapRef.current = map
-  }, [])
-
-  // ==================== State Level Styling ====================
-  // Dark map style with glowing white borders
-  const getStateStyle = useCallback((feature: Feature | undefined) => {
-    const props = feature?.properties as StateProperties
-    const stateName = props?.ST_NM || props?.name || ''
-    const isHovered = hoveredState === stateName
-    const hasStateCode = STATE_NAME_TO_CODE[stateName] !== undefined
-
-    if (hasStateCode) {
-      // States with district data - cyan/light blue glow when hovered
-      return {
-        fillColor: 'transparent',
-        weight: isHovered ? 2.5 : 1.5,
-        opacity: isHovered ? 1 : 0.7,
-        color: isHovered ? '#67e8f9' : 'rgba(255, 255, 255, 0.5)', // Cyan on hover, white normally
-        fillOpacity: isHovered ? 0.15 : 0,
-      }
-    }
-
-    // States without district data - dimmer white border
-    return {
-      fillColor: 'transparent',
-      weight: 1,
-      opacity: 0.4,
-      color: 'rgba(255, 255, 255, 0.3)',
-      fillOpacity: 0,
-    }
-  }, [hoveredState])
-
-  const onEachState = useCallback((feature: Feature, layer: Layer) => {
-    const props = feature.properties as StateProperties
-    const stateName = props.ST_NM || props.name || 'Unknown'
-    const hasStateCode = STATE_NAME_TO_CODE[stateName] !== undefined
-
-    layer.on({
-      mouseover: (e: LeafletMouseEvent) => {
-        setHoveredState(stateName)
-        const target = e.target
-        // Add 3D projection CSS class
-        const element = target.getElement()
-        if (element) {
-          element.classList.add('state-selected')
-        }
-        if (hasStateCode) {
-          // Dark theme: cyan glow with minimal fill
-          target.setStyle({
-            color: '#67e8f9', // Cyan border
-            fillColor: 'rgba(103, 232, 249, 0.1)',
-            fillOpacity: 0.15,
-            weight: 2.5,
-          })
-        } else {
-          // States without data: subtle white glow
-          target.setStyle({
-            color: 'rgba(255, 255, 255, 0.6)',
-            fillColor: 'transparent',
-            fillOpacity: 0,
-            weight: 1.5,
-          })
-        }
-        target.bringToFront()
-      },
-      mouseout: (e: LeafletMouseEvent) => {
-        setHoveredState(null)
-        const target = e.target
-        // Remove 3D projection CSS class
-        const element = target.getElement()
-        if (element) {
-          element.classList.remove('state-selected')
-        }
-        target.setStyle(getStateStyle(feature))
-      },
-      click: () => {
-        handleStateClick(stateName)
-      },
-    })
-
-    // Tooltip with state name
-    const tooltipContent = hasStateCode
-      ? `<div><strong>${stateName}</strong><br/><span class="text-xs text-green-600">Click to explore districts</span></div>`
-      : `<strong>${stateName}</strong>`
-
-    layer.bindTooltip(tooltipContent, {
-      permanent: false,
-      direction: 'center',
-      className: 'state-tooltip',
-    })
-  }, [getStateStyle, handleStateClick])
-
-  // ==================== District Level ====================
+  // ==================== District Logic ====================
   const districtToRegion = useMemo(() => {
     const map = new Map<string, Region>()
     regions.forEach((region) => {
@@ -273,45 +124,39 @@ const RegionSelectionPage = () => {
     return map
   }, [regions])
 
-  // Helper to get district ID from properties (supports multiple GeoJSON formats)
-  // IMPORTANT: Include district name to ensure uniqueness (some dt_codes are reused across districts)
   const getDistrictId = useCallback((props: DistrictProperties): string => {
-    // CDN format: use st_code + dt_code + district name for uniqueness
     if (props.dt_code && props.st_code) {
       const districtName = props.district || props.district_name || ''
-      // Normalize district name for ID (lowercase, remove spaces)
       const normalizedName = districtName.toLowerCase().replace(/\s+/g, '_')
       return `${props.st_code}_${props.dt_code}_${normalizedName}`
     }
-    // All-India format: use objectid or combine statecode + district
     if (props.objectid) return props.objectid
     if (props.statecode && props.district) return `${props.statecode}_${props.district}`
-    // Fallback for old AP format
     return props.district_id || props.NEW_DIST || `unknown_${props.district || ''}`
   }, [])
 
-  // Helper to get district name from properties
   const getDistrictNameFromProps = useCallback((props: DistrictProperties): string => {
     return props.district || props.district_name || props.NEW_DIST || 'Unknown'
   }, [])
 
-  const getDistrictName = useCallback(
-    (districtId: string): string => {
-      // Search through all cached state districts (works for regions from any state)
-      for (const [, data] of stateDistrictsCacheRef.current) {
-        for (const feature of data.features) {
-          const props = feature.properties as DistrictProperties
-          const id = getDistrictId(props)
-          if (id === districtId) {
-            return getDistrictNameFromProps(props)
+  // Prepare Districts Data with Unique IDs for Globe
+  const globeDistrictsData = useMemo(() => {
+    if (!currentStateDistricts) return null;
+    
+    const featuresWithIds = currentStateDistricts.features.map(f => {
+       const props = f.properties as DistrictProperties;
+       const id = getDistrictId(props);
+       return {
+          ...f,
+          properties: {
+             ...props,
+             uniqueId: id
           }
-        }
-      }
-      // Fallback to ID if not found
-      return districtId
-    },
-    [getDistrictId, getDistrictNameFromProps]
-  )
+       }
+    });
+    
+    return { ...currentStateDistricts, features: featuresWithIds } as FeatureCollection;
+  }, [currentStateDistricts, getDistrictId]);
 
   const toggleDistrictSelection = useCallback(
     (districtId: string) => {
@@ -331,6 +176,61 @@ const RegionSelectionPage = () => {
     [districtToRegion]
   )
 
+  const getDistrictStyle = useCallback(
+    (districtId: string) => {
+      const region = districtToRegion.get(districtId)
+      if (region) {
+        return {
+          fillColor: region.color,
+          color: darkenColor(region.color, 30),
+          fillOpacity: 0.75,
+        }
+      }
+
+      const isSelected = currentSelection.has(districtId)
+      if (isSelected) {
+        return {
+          fillColor: SELECTION_COLOR,
+          color: SELECTION_BORDER,
+          fillOpacity: 0.75,
+        }
+      }
+
+      const isHovered = hoveredDistrict === districtId
+      if (isHovered) {
+        return {
+          fillColor: HOVER_FILL,
+          color: HOVER_BORDER,
+          fillOpacity: 0.7,
+        }
+      }
+
+      return {
+        fillColor: DEFAULT_FILL,
+        color: DEFAULT_BORDER,
+        fillOpacity: 0.6,
+      }
+    },
+    [currentSelection, hoveredDistrict, districtToRegion]
+  )
+
+  // Handle back to India
+  const handleBackToIndia = useCallback(() => {
+    setSelectedState(null)
+    setCurrentStateDistricts(null)
+    setCurrentSelection(new Set())
+    setIsTransitioning(true)
+    setTimeout(() => setIsTransitioning(false), 1500)
+  }, [])
+  
+  // ==================== Sidebar Logic (Restored) ====================
+  const clearSelection = () => {
+    setCurrentSelection(new Set())
+    setRegionName('')
+    setRegionalOfficer('')
+    setIntelligentOfficer('')
+  }
+  
   const saveRegion = () => {
     if (currentSelection.size === 0 || !regionName.trim() || !selectedState) return
 
@@ -352,32 +252,7 @@ const RegionSelectionPage = () => {
   const deleteRegion = (regionId: string) => {
     setRegions((prev) => prev.filter((r) => r.id !== regionId))
   }
-
-  const updateRegionName = (regionId: string, newName: string) => {
-    setRegions((prev) =>
-      prev.map((r) => (r.id === regionId ? { ...r, name: newName } : r))
-    )
-  }
-
-  const updateRegionalOfficer = (regionId: string, officer: string) => {
-    setRegions((prev) =>
-      prev.map((r) => (r.id === regionId ? { ...r, regionalOfficer: officer } : r))
-    )
-  }
-
-  const updateIntelligentOfficer = (regionId: string, officer: string) => {
-    setRegions((prev) =>
-      prev.map((r) => (r.id === regionId ? { ...r, intelligentOfficer: officer } : r))
-    )
-  }
-
-  const clearSelection = () => {
-    setCurrentSelection(new Set())
-    setRegionName('')
-    setRegionalOfficer('')
-    setIntelligentOfficer('')
-  }
-
+  
   const removeFromSelection = (districtId: string) => {
     setCurrentSelection((prev) => {
       const newSet = new Set(prev)
@@ -385,133 +260,6 @@ const RegionSelectionPage = () => {
       return newSet
     })
   }
-
-  const getDistrictStyle = useCallback(
-    (districtId: string) => {
-      const region = districtToRegion.get(districtId)
-      if (region) {
-        return {
-          fillColor: region.color,
-          weight: 2,
-          opacity: 1,
-          color: darkenColor(region.color, 30),
-          fillOpacity: 0.75,
-        }
-      }
-
-      const isSelected = currentSelection.has(districtId)
-      if (isSelected) {
-        return {
-          fillColor: SELECTION_COLOR,
-          weight: 2,
-          opacity: 1,
-          color: SELECTION_BORDER,
-          fillOpacity: 0.75,
-        }
-      }
-
-      const isHovered = hoveredDistrict === districtId
-      if (isHovered) {
-        return {
-          fillColor: HOVER_FILL,
-          weight: 2,
-          opacity: 1,
-          color: HOVER_BORDER,
-          fillOpacity: 0.7,
-        }
-      }
-
-      return {
-        fillColor: DEFAULT_FILL,
-        weight: 1,
-        opacity: 1,
-        color: DEFAULT_BORDER,
-        fillOpacity: 0.6,
-      }
-    },
-    [currentSelection, hoveredDistrict, districtToRegion]
-  )
-
-  const onEachDistrict = useCallback(
-    (feature: Feature, layer: Layer) => {
-      const props = feature.properties as DistrictProperties
-      const districtId = getDistrictId(props)
-      const districtName = getDistrictNameFromProps(props)
-
-      layer.on({
-        mouseover: (e: LeafletMouseEvent) => {
-          setHoveredDistrict(districtId)
-          const target = e.target
-          const region = districtToRegion.get(districtId)
-          const isSelected = currentSelection.has(districtId)
-
-          // Add 3D projection CSS class
-          const element = target.getElement()
-          if (element) {
-            element.classList.add('district-selected')
-          }
-
-          if (!region && !isSelected) {
-            target.setStyle({
-              fillColor: HOVER_FILL,
-              fillOpacity: 0.7,
-            })
-          }
-          target.bringToFront()
-        },
-        mouseout: (e: LeafletMouseEvent) => {
-          setHoveredDistrict(null)
-          const target = e.target
-          // Remove 3D projection CSS class
-          const element = target.getElement()
-          if (element) {
-            element.classList.remove('district-selected')
-          }
-          target.setStyle(getDistrictStyle(districtId))
-        },
-        click: () => {
-          toggleDistrictSelection(districtId)
-        },
-      })
-
-      // Build tooltip content with district info
-      const region = districtToRegion.get(districtId)
-      const stateName = props.st_nm || props.statecode || ''
-      let tooltipContent = `<div><strong>${districtName}</strong>`
-      
-      if (stateName) {
-        tooltipContent += `<br/><small style="opacity: 0.7">${stateName}</small>`
-      }
-
-      if (region) {
-        tooltipContent += `<br/><span style="color: ${region.color};">● ${region.name}</span>`
-      }
-
-      tooltipContent += '</div>'
-
-      // Tooltip shows on hover (not permanent)
-      layer.bindTooltip(tooltipContent, {
-        permanent: false,
-        direction: 'top',
-        className: 'district-tooltip',
-      })
-    },
-    [currentSelection, getDistrictStyle, toggleDistrictSelection, districtToRegion, getDistrictId, getDistrictNameFromProps]
-  )
-  
-  const allCachedDistricts = useMemo(() => {
-    const allFeatures: Feature[] = []
-    stateDistrictsCacheRef.current.forEach((data) => {
-      allFeatures.push(...data.features)
-    })
-    if (allFeatures.length === 0) return null
-    return { type: 'FeatureCollection' as const, features: allFeatures }
-  }, [regions]) // Re-compute when regions change
-
-  // Current state districts for district selection
-  const mergedDistrictsData = useMemo(() => {
-    return currentStateDistricts
-  }, [currentStateDistricts])
 
   const getSelectedDistrictData = (): DistrictData[] => {
     if (!currentStateDistricts) return []
@@ -535,260 +283,102 @@ const RegionSelectionPage = () => {
   }
 
   const selectedData = getSelectedDistrictData()
-
-  // Show ALL regions in sidebar (not filtered by current state)
   const allRegions = regions
-
-  // Key for GeoJSON re-renders
-  const geoJsonKey = useMemo(() => {
-    const regionKey = regions
-      .map((r) => `${r.id}:${Array.from(r.districts).join(',')}`)
-      .join('|')
-    return `${selectedState}||${regionKey}`
-  }, [regions, selectedState])
-
-  // Style for rendering saved regions on map
-  const getRegionOverlayStyle = useCallback((districtId: string) => {
-    const region = districtToRegion.get(districtId)
-    if (region) {
-      return {
-        fillColor: region.color,
-        fillOpacity: 0.5,
-        color: region.color,
-        weight: 2,
-        opacity: 1,
-      }
-    }
-    return null // Don't render if not in a region
-  }, [districtToRegion])
-
-  // Computed values
-  const isLoading = !indiaGeoData || (selectedState && !currentStateDistricts && !districtsLoadError)
-  const showDistricts = selectedState && currentStateDistricts && !isTransitioning
 
   // UI State
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mapStyle, setMapStyle] = useState<'satellite' | 'streets'>('streets') // Default to dark theme
-
-  // Handle back to India
-  const handleBackToIndia = useCallback(() => {
-    setSelectedState(null)
-    setCurrentStateDistricts(null)
-    setCurrentSelection(new Set())
-    setIsTransitioning(true)
-    
-    if (mapRef.current) {
-      mapRef.current.flyTo(INDIA_CENTER, INDIA_ZOOM, {
-        duration: 1.5,
-      })
-    }
-    
-    setTimeout(() => setIsTransitioning(false), 1500)
-  }, [])
-
-  // Custom zoom handlers
-  const handleZoomIn = useCallback(() => {
-    if (mapRef.current) {
-      mapRef.current.zoomIn(1, { animate: true })
-    }
-  }, [])
-
-  const handleZoomOut = useCallback(() => {
-    if (mapRef.current) {
-      mapRef.current.zoomOut(1, { animate: true })
-    }
-  }, [])
-
+  
   return (
     <div className="relative h-[calc(100vh-3.5rem)] w-full overflow-hidden bg-black">
-      {/* Fullscreen Map */}
-      <div className="absolute inset-0">
-        {isLoading && !indiaGeoData ? (
-          <div className="flex items-center justify-center h-full bg-black">
-            <div className="text-center animate-fade-in">
-              <div className="earth-spinner mx-auto mb-4" />
-              <p className="text-white/70 text-lg">Loading map data...</p>
-            </div>
+      {/* 3D Globe Visualization */}
+      <GlobeVisualization
+        indiaGeoData={indiaGeoData}
+        currentStateDistricts={globeDistrictsData}
+        selectedState={selectedState}
+        hoveredState={hoveredState}
+        hoveredDistrict={hoveredDistrict}
+        onStateClick={handleStateClick}
+        onDistrictClick={(id) => {
+             // The ID passed from Globe is constructed from properties.
+             // We need to ensure it matches what toggleDistrictSelection expects.
+             // Our toggleDistrictSelection works with the string ID.
+             toggleDistrictSelection(id)
+        }}
+        onStateHover={setHoveredState}
+        onDistrictHover={setHoveredDistrict}
+        getDistrictStyle={getDistrictStyle}
+      />
+
+      {/* Region Manager Toggle - Visible when sidebar is closed */}
+      {!sidebarOpen && selectedState && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="absolute top-20 right-6 z-[1000] flex items-center gap-2 px-4 py-3 bg-black/80 backdrop-blur-md border border-white/20 rounded-xl text-white hover:bg-white/10 transition-all animate-fade-in shadow-lg shadow-black/50 group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+             </svg>
           </div>
-        ) : (
-          <MapContainer
-            center={INDIA_CENTER}
-            zoom={INDIA_ZOOM}
-            style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={true}
-            zoomControl={false}
-            attributionControl={true}
-          >
-            {/* Tile Layer with style toggle - DARK THEMES */}
-            {mapStyle === 'satellite' ? (
-              // ESRI World Imagery - dark satellite
-              <TileLayer
-                attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              />
-            ) : (
-              // CartoDB Dark Matter - pure dark map
-              <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-              />
-            )}
-
-            {/* Map Controller */}
-            <MapController onMapReady={handleMapReady} />
-
-            {/* India States Layer */}
-            {indiaGeoData && (
-              <GeoJSON
-                key={`india-states-${showDistricts ? 'border' : 'selectable'}`}
-                data={indiaGeoData}
-                style={showDistricts ? {
-                  fillColor: 'transparent',
-                  fillOpacity: 0,
-                  color: 'rgba(255,255,255,0.5)',
-                  weight: 2,
-                  opacity: 0.7,
-                } : getStateStyle}
-                onEachFeature={showDistricts ? undefined : onEachState}
-              />
-            )}
-
-            {/* Districts Layer */}
-            {showDistricts && mergedDistrictsData && (
-              <GeoJSON
-                key={`districts-${geoJsonKey}`}
-                data={mergedDistrictsData}
-                style={(feature) => {
-                  const props = feature?.properties as DistrictProperties
-                  const districtId = getDistrictId(props)
-                  return getDistrictStyle(districtId)
-                }}
-                onEachFeature={onEachDistrict}
-              />
-            )}
-
-            {/* Saved Regions Overlay */}
-            {showDistricts && allCachedDistricts && regions.length > 0 && (
-              <GeoJSON
-                key={`regions-overlay-${geoJsonKey}`}
-                data={allCachedDistricts}
-                style={(feature) => {
-                  const props = feature?.properties as DistrictProperties
-                  const districtId = getDistrictId(props)
-                  const style = getRegionOverlayStyle(districtId)
-                  if (!style) return { fillOpacity: 0, stroke: false }
-                  return style
-                }}
-                onEachFeature={(feature, layer) => {
-                  const props = feature.properties as DistrictProperties
-                  const districtId = getDistrictId(props)
-                  const region = districtToRegion.get(districtId)
-                  if (region) {
-                    let tooltipContent = `<div style="min-width: 150px;">`
-                    tooltipContent += `<strong style="color: ${region.color};">● ${region.name}</strong>`
-                    tooltipContent += `<br/><small style="opacity: 0.7;">State: ${region.state}</small>`
-                    tooltipContent += `<br/><small>${region.districts.size} district${region.districts.size !== 1 ? 's' : ''}</small>`
-                    if (region.regionalOfficer) tooltipContent += `<br/><small>Regional Officer: ${region.regionalOfficer}</small>`
-                    if (region.intelligentOfficer) tooltipContent += `<br/><small>Intelligent Officer: ${region.intelligentOfficer}</small>`
-                    tooltipContent += '</div>'
-                    layer.bindTooltip(tooltipContent, { permanent: false, direction: 'top', className: 'earth-tooltip' })
-                  }
-                }}
-              />
-            )}
-          </MapContainer>
-        )}
-      </div>
+          <div className="text-left">
+            <span className="block text-xs text-white/60">Region Manager</span>
+            <span className="block text-sm font-bold">Open Panel</span>
+          </div>
+        </button>
+      )}
 
       {/* Top Left - Location Breadcrumb */}
       <div className="absolute top-4 left-4 z-[1000] animate-slide-in-left">
-        <div className="location-breadcrumb">
+        <div className="location-breadcrumb flex items-center gap-2 bg-black/50 backdrop-blur-md p-2 rounded-full border border-white/10 text-white">
           <div 
-            className="location-breadcrumb-item"
+            className="flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-full transition-colors"
             onClick={handleBackToIndia}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
-            <span>India</span>
+            <span className="font-semibold">India</span>
           </div>
           {selectedState && (
             <>
-              <span className="location-breadcrumb-separator">›</span>
-              <div className="location-breadcrumb-item">
-                <span className="text-green-400">{selectedState}</span>
+              <span className="text-white/30">›</span>
+              <div className="px-3 py-1">
+                <span className="text-cyan-400 font-bold">{selectedState}</span>
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Bottom Left - Zoom Controls */}
-      <div className="absolute left-4 bottom-4 z-[1000] flex flex-col gap-2 animate-slide-in-left">
-        {/* Zoom In */}
-        <button onClick={handleZoomIn} className="map-control-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-        {/* Zoom Out */}
-        <button onClick={handleZoomOut} className="map-control-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-        <div className="w-full h-px bg-white/20 my-1" />
-        {/* Info button */}
-        <button 
-          className="map-control-btn"
-          title="Information"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Top Right - Additional Controls */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2 animate-slide-in-right">
-        {/* Map Style Toggle */}
-        <button 
-          onClick={() => setMapStyle(s => s === 'satellite' ? 'streets' : 'satellite')} 
-          className="map-control-btn"
-          title={mapStyle === 'satellite' ? 'Switch to Dark' : 'Switch to Satellite'}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <path d="M3 9h18M9 21V9" />
-          </svg>
-        </button>
-        {/* Toggle Sidebar */}
-        <button 
-          onClick={() => setSidebarOpen(s => !s)} 
-          className="map-control-btn"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="15" y1="3" x2="15" y2="21" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Bottom Left - Selection Badge (when items selected) */}
+       {/* Selection Badge */}
       {currentSelection.size > 0 && (
-        <div className="absolute bottom-4 left-16 z-[1000] animate-slide-in-up">
-          <div className="selection-badge animate-pulse-glow">
+        <div className="absolute bottom-6 left-6 z-[1000] animate-slide-in-up">
+           <div className="flex items-center gap-2 bg-cyan-900/80 text-cyan-100 px-4 py-2 rounded-lg border border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.3)]">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            <span>{currentSelection.size} district{currentSelection.size !== 1 ? 's' : ''} selected</span>
+            <span className="font-bold">{currentSelection.size} district{currentSelection.size !== 1 ? 's' : ''} selected</span>
           </div>
         </div>
+      )}
+
+      {/* Info Overlay */}
+      <div className="absolute top-4 right-4 z-[1000] text-right pointer-events-none">
+          <h1 className="text-white/10 text-6xl font-black uppercase tracking-tighter">
+             {selectedState ? selectedState : 'INDIA'}
+          </h1>
+      </div>
+      
+      {/* Hint */}
+      {!selectedState && (
+         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-none">
+             <p className="text-white/40 text-sm tracking-widest uppercase bg-black/50 px-4 py-1 rounded-full border border-white/5">
+                Select a state to explore
+             </p>
+         </div>
       )}
 
       {/* Right Sidebar - Floating Panel */}
@@ -799,17 +389,28 @@ const RegionSelectionPage = () => {
       >
         <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden">
           {/* Panel Header */}
-          <div className="p-5 border-b border-white/10">
-            <h1 className="text-xl font-bold text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                  <circle cx="12" cy="10" r="3" />
+          <div className="p-5 border-b border-white/10 relative">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-white flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                Region Manager
+              </h1>
+              <button 
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
-              </div>
-              Region Manager
-            </h1>
-            <p className="text-white/60 text-sm mt-2">
+              </button>
+            </div>
+            <p className="text-white/60 text-sm mt-3 ml-1">
               {selectedState ? `Creating regions in ${selectedState}` : 'Select a state to begin'}
             </p>
           </div>
