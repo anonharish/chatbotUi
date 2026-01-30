@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import type { FeatureCollection } from 'geojson'
+import type { FeatureCollection, Feature } from 'geojson'
 import {
   generateId,
   getNextColor,
@@ -158,6 +158,42 @@ const RegionSelectionPage = () => {
     return { ...currentStateDistricts, features: featuresWithIds } as FeatureCollection;
   }, [currentStateDistricts, getDistrictId]);
 
+  // Combined Saved Region Districts (for displaying regions from other states)
+  const regionDistrictsData = useMemo(() => {
+    const features: Feature[] = []
+    
+    // Iterate over all regions
+    regions.forEach(region => {
+      const stateName = region.state
+      // Get state data from cache
+      const stateData = stateDistrictsCacheRef.current.get(stateName)
+      
+      if (stateData) {
+        // Find features for this region's districts
+        const regionFeatures = stateData.features.filter(f => {
+           const props = f.properties as DistrictProperties
+           const id = getDistrictId(props)
+           return region.districts.has(id)
+        })
+        
+        // Add uniqueId and region color
+        const styledFeatures = regionFeatures.map(f => ({
+           ...f,
+           properties: {
+             ...f.properties,
+             uniqueId: getDistrictId(f.properties as DistrictProperties),
+             regionColor: region.color,
+             isRegion: true
+           }
+        }))
+        
+        features.push(...styledFeatures)
+      }
+    })
+    
+    return { type: 'FeatureCollection', features } as FeatureCollection
+  }, [regions, getDistrictId]) // stateDistrictsCacheRef is stable match
+
   const toggleDistrictSelection = useCallback(
     (districtId: string) => {
       const existingRegion = districtToRegion.get(districtId)
@@ -307,6 +343,7 @@ const RegionSelectionPage = () => {
         onStateHover={setHoveredState}
         onDistrictHover={setHoveredDistrict}
         getDistrictStyle={getDistrictStyle}
+        regionDistricts={regionDistrictsData}
       />
 
       {/* Region Manager Toggle - Visible when sidebar is closed */}

@@ -14,6 +14,7 @@ interface GlobeVisualizationProps {
   onStateHover: (stateName: string | null) => void
   onDistrictHover: (districtId: string | null) => void
   getDistrictStyle: (districtId: string) => { color: string; fillOpacity: number; fillColor: string }
+  regionDistricts?: FeatureCollection | null
   width?: number
   height?: number
 }
@@ -33,6 +34,7 @@ export const GlobeVisualization = ({
   onStateHover,
   onDistrictHover,
   getDistrictStyle,
+  regionDistricts
 }: GlobeVisualizationProps) => {
   const globeEl = useRef<any | undefined>(undefined)
   const [mounted, setMounted] = useState(false)
@@ -121,7 +123,11 @@ export const GlobeVisualization = ({
   }, [currentStateDistricts])
   
   const displayFeatures = useMemo(() => {
-    if (!selectedState || !currentStateDistricts) return globeData;
+    const regions = regionDistricts?.features || []
+
+    if (!selectedState || !currentStateDistricts) {
+       return [...globeData, ...regions]
+    }
     
     // Filter out the selected state from the main india list, and add districts
     const otherStates = globeData.filter((f: any) => {
@@ -129,8 +135,8 @@ export const GlobeVisualization = ({
       return name !== selectedState
     })
     
-    return [...otherStates, ...districtFeatures]
-  }, [globeData, districtFeatures, selectedState, currentStateDistricts])
+    return [...otherStates, ...regions, ...districtFeatures]
+  }, [globeData, districtFeatures, selectedState, currentStateDistricts, regionDistricts])
 
   // Interaction Handlers
   const onPolygonHover = useCallback((d: object | null) => {
