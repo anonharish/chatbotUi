@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import Globe from 'react-globe.gl'
 import type { FeatureCollection, Feature } from 'geojson'
-import * as THREE from 'three'
+// import * as THREE from 'three'
 
 interface GlobeVisualizationProps {
   indiaGeoData: FeatureCollection | null
@@ -20,7 +20,7 @@ interface GlobeVisualizationProps {
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 1.0 } // Closer initial view (Zoomed in on India)
-const FOCUS_CENTER_OFFSET = { lat: 0, lng: 0, altitude: 0.4 } // Very close "cinematic" zoom for state
+// const FOCUS_CENTER_OFFSET = { lat: 0, lng: 0, altitude: 0.4 } // Very close "cinematic" zoom for state
 
 export const GlobeVisualization = ({
   indiaGeoData,
@@ -36,7 +36,7 @@ export const GlobeVisualization = ({
 }: GlobeVisualizationProps) => {
   const globeEl = useRef<any | undefined>(undefined)
   const [mounted, setMounted] = useState(false)
-  const [hoveredPolygon, setHoveredPolygon] = useState<object | null>(null)
+  // const [hoveredPolygon, setHoveredPolygon] = useState<object | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -134,7 +134,7 @@ export const GlobeVisualization = ({
 
   // Interaction Handlers
   const onPolygonHover = useCallback((d: object | null) => {
-    setHoveredPolygon(d)
+    // setHoveredPolygon(d)
     
     if (!d) {
       onStateHover(null)

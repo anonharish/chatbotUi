@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import type { FeatureCollection, Feature } from 'geojson'
+import type { FeatureCollection } from 'geojson'
 import {
   generateId,
   getNextColor,
@@ -16,11 +16,11 @@ import {
 import { GlobeVisualization } from './components/GlobeVisualization' // Import the new component
 
 // Types for state properties
-interface StateProperties {
-  name: string
-  state_code?: string
-  ST_NM?: string
-}
+// interface StateProperties {
+//   name: string
+//   state_code?: string
+//   ST_NM?: string
+// }
 
 import type { Region, DistrictData, DistrictProperties } from './types'
 
@@ -364,22 +364,7 @@ const RegionSelectionPage = () => {
           </div>
         </div>
       )}
-
-      {/* Info Overlay */}
-      <div className="absolute top-4 right-4 z-[1000] text-right pointer-events-none">
-          <h1 className="text-white/10 text-6xl font-black uppercase tracking-tighter">
-             {selectedState ? selectedState : 'INDIA'}
-          </h1>
-      </div>
-      
-      {/* Hint */}
-      {!selectedState && (
-         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-none">
-             <p className="text-white/40 text-sm tracking-widest uppercase bg-black/50 px-4 py-1 rounded-full border border-white/5">
-                Select a state to explore
-             </p>
-         </div>
-      )}
+   
 
       {/* Right Sidebar - Floating Panel */}
       <div 
