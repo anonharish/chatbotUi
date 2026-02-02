@@ -38,9 +38,8 @@ export const SELECTION_COLOR = '#a855f7'
 export const SELECTION_BORDER = '#7c3aed'
 
 // Default district colors
-export const DEFAULT_FILL = 'rgba(0, 0, 0, 0)' // Transparent fill to prevent glow
-export const DEFAULT_BORDER = 'rgba(100, 255, 255, 0.3)' // Faint cyan border
-
+export const DEFAULT_FILL = '#e2e8f0'
+export const DEFAULT_BORDER = '#94a3b8'
 
 // Hover colors
 export const HOVER_FILL = '#60a5fa'
