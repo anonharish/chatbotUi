@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import Globe from 'react-globe.gl'
 import type { FeatureCollection, Feature } from 'geojson'
-// import * as THREE from 'three'
+import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
 interface GlobeVisualizationProps {
   indiaGeoData: FeatureCollection | null
@@ -21,7 +24,6 @@ interface GlobeVisualizationProps {
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 1.0 } // Closer initial view (Zoomed in on India)
-// const FOCUS_CENTER_OFFSET = { lat: 0, lng: 0, altitude: 0.4 } // Very close "cinematic" zoom for state
 
 export const GlobeVisualization = ({
   indiaGeoData,
@@ -38,7 +40,7 @@ export const GlobeVisualization = ({
 }: GlobeVisualizationProps) => {
   const globeEl = useRef<any | undefined>(undefined)
   const [mounted, setMounted] = useState(false)
-  // const [hoveredPolygon, setHoveredPolygon] = useState<object | null>(null)
+  const composerRef = useRef<EffectComposer | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -47,15 +49,59 @@ export const GlobeVisualization = ({
     setTimeout(() => {
       if (globeEl.current) {
         globeEl.current.pointOfView(INDIA_CENTER, 2000)
+        
+        // Setup Post-Processing
+        const renderer = globeEl.current.renderer()
+        const scene = globeEl.current.scene()
+        const camera = globeEl.current.camera()
+        
+        // Configure Renderer
+        renderer.toneMapping = THREE.ReinhardToneMapping
+        renderer.toneMappingExposure = 1.2 // Bump exposure slightly
+        
+        // Composer
+        const composer = new EffectComposer(renderer)
+        composer.addPass(new RenderPass(scene, camera))
+        
+        // Bloom
+        const bloomPass = new UnrealBloomPass(
+           new THREE.Vector2(window.innerWidth, window.innerHeight),
+           1.5,  // strength
+           0.4,  // radius
+           0.85  // threshold
+        )
+        bloomPass.strength = .5 // Stronger glow
+        bloomPass.radius = 0.2
+        bloomPass.threshold = 0.5 // Allow white borders to glow
+        composer.addPass(bloomPass)
+        
+        composerRef.current = composer
+        
+        // Hijack Render Loop
+        // We need to keep controls updating
+        const controls = globeEl.current.controls()
+        
+        renderer.setAnimationLoop(() => {
+          controls.update()
+          composer.render()
+        })
       }
     }, 1000)
+    
+    // Cleanup
+    return () => {
+       if (globeEl.current) {
+          const renderer = globeEl.current.renderer()
+          if (renderer) renderer.setAnimationLoop(null)
+       }
+    }
   }, [])
 
   // Auto-rotate when idle
   useEffect(() => {
     if (globeEl.current && !selectedState && !hoveredState) {
       globeEl.current.controls().autoRotate = true
-      globeEl.current.controls().autoRotateSpeed = 0.25 // Slowed down
+      globeEl.current.controls().autoRotateSpeed = 0.35 // Slightly faster for visual appeal
     } else if (globeEl.current) {
       globeEl.current.controls().autoRotate = false
     }
@@ -138,6 +184,7 @@ export const GlobeVisualization = ({
     return [...otherStates, ...regions, ...districtFeatures]
   }, [globeData, districtFeatures, selectedState, currentStateDistricts, regionDistricts])
 
+
   // Interaction Handlers
   const onPolygonHover = useCallback((d: object | null) => {
     // setHoveredPolygon(d)
@@ -183,11 +230,15 @@ export const GlobeVisualization = ({
     // DISTRICT STYLE
     if (props.uniqueId) {
        const style = getDistrictStyle(props.uniqueId)
+       // Elevate district if it belongs to chosen state (which is elevated)
+       const dState = props.st_nm || props.ST_NM || props.state
+       const isElevated = selectedState && dState === selectedState
+       
        return {
-          sideColor: 'rgba(50, 50, 50, 0.5)',
+          sideColor: 'rgba(50, 50, 50, 0.0)',
           strokeColor: style.color,
           capColor: style.fillColor, 
-          altitude: 0.02
+          altitude: isElevated ? 0.025 : 0.006 // Slightly above parent state
        }
     }
 
@@ -198,27 +249,27 @@ export const GlobeVisualization = ({
 
     if (isSelected) {
       return {
-        sideColor: 'rgba(100, 200, 255, 0.1)',
-        strokeColor: '#67e8f9',
-        capColor: 'rgba(0, 0, 0, 0)', // Transparent
-        altitude: 0.015
+        sideColor: 'rgba(0,0,0,0)', // Invisible Side (Floating)
+        strokeColor: '#ffffff', // Bright White
+        capColor: 'rgba(0, 0, 0, 0)', 
+        altitude: 0.025 // Lower elevation
       }
     }
 
     if (isHovered) {
       return {
-        sideColor: 'rgba(100, 200, 255, 0.3)',
-        strokeColor: '#67e8f9',
-        capColor: 'rgba(103, 232, 249, 0.1)',
-        altitude: 0.02
+        sideColor: 'rgba(0,0,0,0)', // Invisible Side
+        strokeColor: '#ffffff', // Bright White
+        capColor: 'rgba(0, 0, 0, 0)',
+        altitude: 0.025
       }
     }
 
     return {
-      sideColor: 'rgba(50, 50, 50, 0.1)',
-      strokeColor: 'rgba(255, 255, 255, 0.3)',
-      capColor: 'rgba(0,0,0,0.3)', // Darker fill
-      altitude: 0.01
+      sideColor: 'rgba(0,0,0,0)',
+      strokeColor: 'rgba(255, 255, 255, 0.15)', // Very dull baseline
+      capColor: 'rgba(0,0,0,0.1)',
+      altitude: 0.005
     }
   }, [hoveredState, selectedState, getDistrictStyle])
 
@@ -233,8 +284,20 @@ export const GlobeVisualization = ({
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           // Removed backgroundImageUrl for pure black/starfield background from parent
           
+          // Paths (Animated Borders) - DISABLED
+          // pathsData={borderPathData} 
+          // pathPointAlt={d => (d as any).altitude}
+          // pathColor={() => ['#00ffff', '#d946ef']} 
+          // pathDashLength={0.4}
+          // pathDashGap={0.1}
+          // pathDashAnimateTime={4000}
+          
           polygonsData={displayFeatures}
-          polygonAltitude={d => (d as any).properties?.uniqueId ? 0.02 : 0.01}
+          polygonsTransitionDuration={400} // Snappy transition for hover
+          polygonAltitude={d => {
+             const style = getPolygonStyle(d)
+             return style.altitude
+          }}
           polygonCapColor={d => getPolygonStyle(d).capColor}
           polygonSideColor={d => getPolygonStyle(d).sideColor}
           polygonStrokeColor={d => getPolygonStyle(d).strokeColor}
@@ -243,8 +306,8 @@ export const GlobeVisualization = ({
           onPolygonClick={onPolygonClick}
           
           // Enhanced Atmosphere
-          atmosphereColor="#67e8f9"
-          atmosphereAltitude={0.15}
+          atmosphereColor="#3b82f6" // Deeper blue
+          atmosphereAltitude={0.1} // Reduced altitude
           
           animateIn={true}
         />
