@@ -1,7 +1,10 @@
-import { Outlet, useLocation } from 'react-router'
+import { Outlet, useLocation, useNavigate } from 'react-router'
+import { Map } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function RootLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   
   // Check if we're on the region-selection page (fullscreen mode)
   const isFullscreenPage = location.pathname === '/region-selection'
@@ -35,7 +38,15 @@ export default function RootLayout() {
           )}
           
           <nav className="ml-auto flex items-center space-x-4">
-            {/* Add navigation items here */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate('/region-selection')} 
+              className={isFullscreenPage ? "text-white hover:bg-white/10" : ""}
+              title="Open 3D Map"
+            >
+               <Map className="h-5 w-5" />
+            </Button>
           </nav>
         </div>
       </header>

@@ -23,14 +23,14 @@ interface GlobeVisualizationProps {
 }
 
 // India Center roughly
-const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 1.0 } // Closer initial view (Zoomed in on India)
+const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
 
 export const GlobeVisualization = ({
   indiaGeoData,
   currentStateDistricts,
   selectedState,
   hoveredState,
-  hoveredDistrict,
+  // hoveredDistrict,
   onStateClick,
   onDistrictClick,
   onStateHover,
@@ -273,6 +273,40 @@ export const GlobeVisualization = ({
     }
   }, [hoveredState, selectedState, getDistrictStyle])
 
+  // Paths Data for Selected State Border (Thick Line)
+  const selectedStatePaths = useMemo(() => {
+    if (!selectedState || !indiaGeoData) return [];
+    
+    const stateFeature = indiaGeoData.features.find((f: any) => 
+      (f.properties?.ST_NM || f.properties?.name) === selectedState
+    );
+
+    if (!stateFeature) return [];
+
+    const paths: any[] = [];
+    
+    const processPolygon = (coords: any[]) => {
+       // coords is array of [lng, lat]
+       // Globe expects [lat, lng, alt] or just [lat, lng]
+       // We need to map [lng, lat] -> [lat, lng]
+       return coords.map(p => [p[1], p[0], 0.025]); // Altitude slightly above glowing polygon
+    };
+
+    if (stateFeature.geometry?.type === 'Polygon') {
+       stateFeature.geometry.coordinates.forEach((ring: any[]) => {
+          paths.push(processPolygon(ring));
+       });
+    } else if (stateFeature.geometry?.type === 'MultiPolygon') {
+       stateFeature.geometry.coordinates.forEach((polygon: any[]) => {
+          polygon.forEach((ring: any[]) => {
+             paths.push(processPolygon(ring));
+          });
+       });
+    }
+    
+    return paths;
+  }, [selectedState, indiaGeoData])
+
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       {mounted && (
@@ -284,13 +318,21 @@ export const GlobeVisualization = ({
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           // Removed backgroundImageUrl for pure black/starfield background from parent
           
-          // Paths (Animated Borders) - DISABLED
-          // pathsData={borderPathData} 
-          // pathPointAlt={d => (d as any).altitude}
-          // pathColor={() => ['#00ffff', '#d946ef']} 
-          // pathDashLength={0.4}
-          // pathDashGap={0.1}
-          // pathDashAnimateTime={4000}
+          // Paths (Animated Borders) - ENABLED
+          pathsData={selectedStatePaths} 
+          pathPointAlt={p => p[2]} // Use the altitude we set in selectedStatePaths
+          
+          // CSS Reference Gradient: #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82
+          pathColor={() => [
+             '#f79533', '#f37055', '#ef4e7b', '#a166ab', 
+             '#5073b8', '#1098ad', '#07b39b', '#6fba82'
+          ]}
+          
+          pathStroke={2} // Thicker border (reference was 3px)
+          pathDashLength={1} // Long dashes to simulate continuous flow
+          pathDashGap={0} // Short gaps
+          pathDashAnimateTime={5000} // 3s animation loop from reference
+          pathResolution={5} // Higher resolution for smoother curves
           
           polygonsData={displayFeatures}
           polygonsTransitionDuration={400} // Snappy transition for hover
