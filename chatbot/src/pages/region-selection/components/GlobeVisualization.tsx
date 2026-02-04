@@ -20,7 +20,8 @@ interface GlobeVisualizationProps {
 
 
 
-import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER } from '../constants'
+
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
@@ -269,8 +270,8 @@ export const GlobeVisualization = ({
     if (isHovered) {
       return {
         sideColor: 'rgba(0,0,0,0)', // Invisible Side
-        strokeColor: '#ffffff', // Bright White
-        capColor: 'rgba(0, 0, 0, 0)',
+        strokeColor: STATE_HOVER_COLOR, // Hover Color
+        capColor: STATE_HOVER_COLOR, // Filled Hover Color
         altitude: 0.03
       }
     }

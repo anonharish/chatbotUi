@@ -59,6 +59,9 @@ export const INDIA_BORDER_COLOR = "#FF9933" // Saffron distinct border
 export const DEFAULT_STATE_BORDER = "#8BC462"
 export const DEFAULT_STATE_FILL = DEFAULT_STATE_BORDER // Alias for backward compatibility/cache clearing
 
+// Hover Colors
+export const STATE_HOVER_COLOR = "#BBF7D0"
+
 // State code to name mapping (from INDIA_DISTRICTS.geojson)
 export const STATE_CODE_MAP: Record<string, string> = {
   '1': 'Jammu and Kashmir',
