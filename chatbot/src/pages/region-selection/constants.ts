@@ -50,10 +50,14 @@ export const HOVER_BORDER = '#2563eb'
 export const LANDMASS_COLOR = "#E9D4BC"
 
 // Active/Selected State Colors
-// Active/Selected State Colors
 export const SELECTED_STATE_FILL = "#FFFFFF"
 export const SELECTED_STATE_BORDER = "#16A34A"
 export const SELECTED_STATE_SIDE_COLOR = "rgba(0, 0, 0, 0)" // Invisible side by default as per user request
+
+// India Colors
+export const INDIA_BORDER_COLOR = "#FF9933" // Saffron distinct border
+export const DEFAULT_STATE_BORDER = "#8BC462"
+export const DEFAULT_STATE_FILL = DEFAULT_STATE_BORDER // Alias for backward compatibility/cache clearing
 
 // State code to name mapping (from INDIA_DISTRICTS.geojson)
 export const STATE_CODE_MAP: Record<string, string> = {

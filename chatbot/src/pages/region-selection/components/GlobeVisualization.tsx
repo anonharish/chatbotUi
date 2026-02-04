@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import Globe from 'react-globe.gl'
 import type { FeatureCollection, Feature } from 'geojson'
-import * as THREE from 'three'
 
 interface GlobeVisualizationProps {
   indiaGeoData: FeatureCollection | null
@@ -20,7 +19,8 @@ interface GlobeVisualizationProps {
 }
 
 
-import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR } from '../constants'
+
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
@@ -277,8 +277,8 @@ export const GlobeVisualization = ({
 
     return {
       sideColor: 'rgba(0,0,0,0)',
-      strokeColor: 'rgba(255, 255, 255, 0.2)', // Slightly visible borders
-      capColor: LANDMASS_COLOR, // Match world color
+      strokeColor: DEFAULT_STATE_BORDER, // Default state border color
+      capColor: LANDMASS_COLOR, // Revert to landmass color
       altitude: 0.012 // Slightly above world base
     }
   }, [hoveredState, selectedState, getDistrictStyle])
