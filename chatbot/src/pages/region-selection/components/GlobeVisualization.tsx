@@ -21,10 +21,23 @@ interface GlobeVisualizationProps {
 
 
 
-import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR } from '../constants'
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR, WATER_REGION_COLOR } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
+
+// Helper to generate solid color image
+const genSolidColorImg = (color: string) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+  }
+  return canvas.toDataURL('image/png');
+}
 
 export const GlobeVisualization = ({
   indiaGeoData,
@@ -63,6 +76,7 @@ export const GlobeVisualization = ({
         const controls = globeEl.current.controls()
         const renderer = globeEl.current.renderer()
         
+
         renderer.setAnimationLoop(() => {
           controls.update()
           renderer.render(globeEl.current.scene(), globeEl.current.camera())
@@ -318,6 +332,9 @@ export const GlobeVisualization = ({
     return paths;
   }, [selectedState, indiaGeoData])
 
+  // Water Texture (Solid Color)
+  const waterTexture = useMemo(() => genSolidColorImg(WATER_REGION_COLOR), [])
+
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       {mounted && (
@@ -325,7 +342,7 @@ export const GlobeVisualization = ({
           ref={globeEl}
           // Use dark texture or null for black background
           backgroundColor="#000000"
-          globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+          globeImageUrl={waterTexture} // Use generated solid color texture
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           // Removed backgroundImageUrl for pure black/starfield background from parent
           
