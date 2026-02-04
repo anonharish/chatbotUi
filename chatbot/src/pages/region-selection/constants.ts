@@ -49,6 +49,12 @@ export const HOVER_BORDER = '#2563eb'
 // Landmass Color
 export const LANDMASS_COLOR = "#E9D4BC"
 
+// Active/Selected State Colors
+// Active/Selected State Colors
+export const SELECTED_STATE_FILL = "#FFFFFF"
+export const SELECTED_STATE_BORDER = "#16A34A"
+export const SELECTED_STATE_SIDE_COLOR = "rgba(0, 0, 0, 0)" // Invisible side by default as per user request
+
 // State code to name mapping (from INDIA_DISTRICTS.geojson)
 export const STATE_CODE_MAP: Record<string, string> = {
   '1': 'Jammu and Kashmir',

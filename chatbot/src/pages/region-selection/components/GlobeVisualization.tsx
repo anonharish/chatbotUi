@@ -18,7 +18,9 @@ interface GlobeVisualizationProps {
   width?: number
   height?: number
 }
-import { LANDMASS_COLOR } from '../constants'
+
+
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
@@ -232,10 +234,20 @@ export const GlobeVisualization = ({
        const dState = props.st_nm || props.ST_NM || props.state
        const isElevated = selectedState && dState === selectedState
        
+       let finalCapColor = style.fillColor
+       let finalSideColor = 'rgba(50, 50, 50, 0.0)'
+       
+       // If this district is part of the selected state and has default (transparent) fill, 
+       // Override with Selected State Fill (White)
+       if (isElevated && style.fillColor === DEFAULT_FILL) {
+           finalCapColor = SELECTED_STATE_FILL
+           finalSideColor = SELECTED_STATE_SIDE_COLOR // Use the side color from constants
+       }
+
        return {
-          sideColor: 'rgba(50, 50, 50, 0.0)',
+          sideColor: finalSideColor,
           strokeColor: style.color,
-          capColor: style.fillColor, 
+          capColor: finalCapColor, 
           altitude: isElevated ? 0.03 : 0.015 // Elevated above base
        }
     }
@@ -247,9 +259,9 @@ export const GlobeVisualization = ({
 
     if (isSelected) {
       return {
-        sideColor: 'rgba(0,0,0,0)', // Invisible Side (Floating)
-        strokeColor: '#ffffff', // Bright White
-        capColor: 'rgba(0, 0, 0, 0)', 
+        sideColor: SELECTED_STATE_SIDE_COLOR, // Invisible Side (Floating)
+        strokeColor: SELECTED_STATE_BORDER, // Active Border
+        capColor: SELECTED_STATE_FILL, // Active Fill
         altitude: 0.03 // Lower elevation
       }
     }
@@ -287,7 +299,7 @@ export const GlobeVisualization = ({
        // coords is array of [lng, lat]
        // Globe expects [lat, lng, alt] or just [lat, lng]
        // We need to map [lng, lat] -> [lat, lng]
-       return coords.map(p => [p[1], p[0], 0.03]); // Altitude matches selected state
+       return coords.map(p => [p[1], p[0], 0.04]); // Altitude slightly above selected state districts (0.03)
     };
 
     if (stateFeature.geometry?.type === 'Polygon') {
@@ -320,11 +332,8 @@ export const GlobeVisualization = ({
           pathsData={selectedStatePaths} 
           pathPointAlt={p => p[2]} // Use the altitude we set in selectedStatePaths
           
-          // CSS Reference Gradient: #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82
-          pathColor={() => [
-             '#f79533', '#f37055', '#ef4e7b', '#a166ab', 
-             '#5073b8', '#1098ad', '#07b39b', '#6fba82'
-          ]}
+          // Use Active Border Color
+          pathColor={() => SELECTED_STATE_BORDER}
           
           pathStroke={2} // Thicker border (reference was 3px)
           pathDashLength={1} // Long dashes to simulate continuous flow
