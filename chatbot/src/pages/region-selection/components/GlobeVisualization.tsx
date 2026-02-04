@@ -2,9 +2,6 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import Globe from 'react-globe.gl'
 import type { FeatureCollection, Feature } from 'geojson'
 import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
 interface GlobeVisualizationProps {
   indiaGeoData: FeatureCollection | null
@@ -21,6 +18,7 @@ interface GlobeVisualizationProps {
   width?: number
   height?: number
 }
+import { LANDMASS_COLOR } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
@@ -40,7 +38,15 @@ export const GlobeVisualization = ({
 }: GlobeVisualizationProps) => {
   const globeEl = useRef<any | undefined>(undefined)
   const [mounted, setMounted] = useState(false)
-  const composerRef = useRef<EffectComposer | null>(null)
+  const [worldGeoData, setWorldGeoData] = useState<FeatureCollection | null>(null)
+
+  useEffect(() => {
+    // Fetch world countries data
+    fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
+      .then(res => res.json())
+      .then(setWorldGeoData)
+      .catch(err => console.error('Failed to load world data:', err))
+  }, [])
 
   useEffect(() => {
     setMounted(true)
@@ -50,40 +56,13 @@ export const GlobeVisualization = ({
       if (globeEl.current) {
         globeEl.current.pointOfView(INDIA_CENTER, 2000)
         
-        // Setup Post-Processing
-        const renderer = globeEl.current.renderer()
-        const scene = globeEl.current.scene()
-        const camera = globeEl.current.camera()
-        
-        // Configure Renderer
-        renderer.toneMapping = THREE.ReinhardToneMapping
-        renderer.toneMappingExposure = 1.2 // Bump exposure slightly
-        
-        // Composer
-        const composer = new EffectComposer(renderer)
-        composer.addPass(new RenderPass(scene, camera))
-        
-        // Bloom
-        const bloomPass = new UnrealBloomPass(
-           new THREE.Vector2(window.innerWidth, window.innerHeight),
-           1.5,  // strength
-           0.4,  // radius
-           0.85  // threshold
-        )
-        bloomPass.strength = .5 // Stronger glow
-        bloomPass.radius = 0.2
-        bloomPass.threshold = 0.5 // Allow white borders to glow
-        composer.addPass(bloomPass)
-        
-        composerRef.current = composer
-        
-        // Hijack Render Loop
-        // We need to keep controls updating
+        // Hijack Render Loop to update controls
         const controls = globeEl.current.controls()
+        const renderer = globeEl.current.renderer()
         
         renderer.setAnimationLoop(() => {
           controls.update()
-          composer.render()
+          renderer.render(globeEl.current.scene(), globeEl.current.camera())
         })
       }
     }, 1000)
@@ -171,8 +150,17 @@ export const GlobeVisualization = ({
   const displayFeatures = useMemo(() => {
     const regions = regionDistricts?.features || []
 
+    // Process world data
+    const worldFeatures = worldGeoData?.features || []
+    const styledWorld = worldFeatures
+       .filter((f: any) => f.properties?.NAME !== 'India' && f.properties?.name !== 'India') // Exclude India to avoid overlap
+       .map((f: any) => ({
+          ...f,
+          properties: { ...f.properties, isWorld: true }
+       }))
+
     if (!selectedState || !currentStateDistricts) {
-       return [...globeData, ...regions]
+       return [...styledWorld, ...globeData, ...regions]
     }
     
     // Filter out the selected state from the main india list, and add districts
@@ -181,8 +169,8 @@ export const GlobeVisualization = ({
       return name !== selectedState
     })
     
-    return [...otherStates, ...regions, ...districtFeatures]
-  }, [globeData, districtFeatures, selectedState, currentStateDistricts, regionDistricts])
+    return [...styledWorld, ...otherStates, ...regions, ...districtFeatures]
+  }, [globeData, districtFeatures, selectedState, currentStateDistricts, regionDistricts, worldGeoData])
 
 
   // Interaction Handlers
@@ -227,6 +215,16 @@ export const GlobeVisualization = ({
     const f = d as Feature
     const props = f.properties as any
     
+    // WORLD STYLE
+    if (props.isWorld) {
+        return {
+            sideColor: 'rgba(0,0,0,0)',
+            strokeColor: 'rgba(0, 0, 0, 0.2)', // Subtle borders for countries
+            capColor: LANDMASS_COLOR, 
+            altitude: 0.01 // Increased to prevents patches/z-fighting with bump map
+        }
+    }
+
     // DISTRICT STYLE
     if (props.uniqueId) {
        const style = getDistrictStyle(props.uniqueId)
@@ -238,7 +236,7 @@ export const GlobeVisualization = ({
           sideColor: 'rgba(50, 50, 50, 0.0)',
           strokeColor: style.color,
           capColor: style.fillColor, 
-          altitude: isElevated ? 0.025 : 0.006 // Slightly above parent state
+          altitude: isElevated ? 0.03 : 0.015 // Elevated above base
        }
     }
 
@@ -252,7 +250,7 @@ export const GlobeVisualization = ({
         sideColor: 'rgba(0,0,0,0)', // Invisible Side (Floating)
         strokeColor: '#ffffff', // Bright White
         capColor: 'rgba(0, 0, 0, 0)', 
-        altitude: 0.025 // Lower elevation
+        altitude: 0.03 // Lower elevation
       }
     }
 
@@ -261,15 +259,15 @@ export const GlobeVisualization = ({
         sideColor: 'rgba(0,0,0,0)', // Invisible Side
         strokeColor: '#ffffff', // Bright White
         capColor: 'rgba(0, 0, 0, 0)',
-        altitude: 0.025
+        altitude: 0.03
       }
     }
 
     return {
       sideColor: 'rgba(0,0,0,0)',
-      strokeColor: 'rgba(255, 255, 255, 0.15)', // Very dull baseline
-      capColor: 'rgba(0,0,0,0.1)',
-      altitude: 0.005
+      strokeColor: 'rgba(255, 255, 255, 0.2)', // Slightly visible borders
+      capColor: LANDMASS_COLOR, // Match world color
+      altitude: 0.012 // Slightly above world base
     }
   }, [hoveredState, selectedState, getDistrictStyle])
 
@@ -289,7 +287,7 @@ export const GlobeVisualization = ({
        // coords is array of [lng, lat]
        // Globe expects [lat, lng, alt] or just [lat, lng]
        // We need to map [lng, lat] -> [lat, lng]
-       return coords.map(p => [p[1], p[0], 0.025]); // Altitude slightly above glowing polygon
+       return coords.map(p => [p[1], p[0], 0.03]); // Altitude matches selected state
     };
 
     if (stateFeature.geometry?.type === 'Polygon') {

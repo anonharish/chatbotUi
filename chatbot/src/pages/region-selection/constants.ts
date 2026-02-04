@@ -46,6 +46,9 @@ export const DEFAULT_BORDER = 'rgba(100, 255, 255, 0.3)' // Faint cyan border
 export const HOVER_FILL = '#60a5fa'
 export const HOVER_BORDER = '#2563eb'
 
+// Landmass Color
+export const LANDMASS_COLOR = "#E9D4BC"
+
 // State code to name mapping (from INDIA_DISTRICTS.geojson)
 export const STATE_CODE_MAP: Record<string, string> = {
   '1': 'Jammu and Kashmir',
