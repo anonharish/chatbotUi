@@ -21,7 +21,9 @@ interface GlobeVisualizationProps {
 
 
 
-import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR, WATER_REGION_COLOR } from '../constants'
+// import worldMapTerrain from '../../../assets/world-map-terrain-v2.png'
+
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR , WATER_REGION_COLOR} from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
@@ -332,17 +334,14 @@ export const GlobeVisualization = ({
     return paths;
   }, [selectedState, indiaGeoData])
 
-  // Water Texture (Solid Color)
-  const waterTexture = useMemo(() => genSolidColorImg(WATER_REGION_COLOR), [])
-
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
       {mounted && (
         <Globe
           ref={globeEl}
           // Use dark texture or null for black background
-          backgroundColor="#000000"
-          globeImageUrl={waterTexture} // Use generated solid color texture
+          backgroundColor="#FAFAFA" // Off-white/Light Gray background
+          globeImageUrl= "https://upload.wikimedia.org/wikipedia/commons/3/3e/Equirectangular-projection-topographic-world.jpg" // Satellite Day View
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           // Removed backgroundImageUrl for pure black/starfield background from parent
           
@@ -373,8 +372,8 @@ export const GlobeVisualization = ({
           onPolygonClick={onPolygonClick}
           
           // Enhanced Atmosphere
-          atmosphereColor="#3b82f6" // Deeper blue
-          atmosphereAltitude={0.1} // Reduced altitude
+          atmosphereColor="#4ADE80" // Bright luminous green
+          atmosphereAltitude={0.1} // Stronger visible glow height
           
           animateIn={true}
         />

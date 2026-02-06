@@ -47,7 +47,7 @@ export const HOVER_FILL = '#60a5fa'
 export const HOVER_BORDER = '#2563eb'
 
 // Landmass Color
-export const LANDMASS_COLOR = "#E9D4BC"
+export const LANDMASS_COLOR = `rgba(233, 212, 188, 0.5)` // 50% opacity
 
 // Active/Selected State Colors
 export const SELECTED_STATE_FILL = "#FFFFFF"
