@@ -3,9 +3,14 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/layouts/RootLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
+
+
 // Lazy load pages for optimal bundle splitting
+const CardPreviewPage = lazy(() => import('@/pages/CardPreviewPage'))
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+
+
 
 // Loading fallback component
 const PageLoader = () => (
@@ -35,6 +40,13 @@ export const router = createBrowserRouter([
         path: 'chat',
         element: withSuspense(HomePage),
       },
+
+      {
+        path: 'card-preview',
+        element: withSuspense(CardPreviewPage),
+      },
+
+
       // Add more routes here as needed
       // Example:
       // {
