@@ -10,8 +10,7 @@ const INITIAL_ZOOM = 3.5
 // India States GeoJSON URL
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
 
-// India Districts GeoJSON URL
-const INDIA_DISTRICTS_URL = 'https://raw.githubusercontent.com/geohacker/india/master/district/india_district.geojson'
+
 
 interface MapboxVisualizationProps {
   onStateClick?: (stateName: string) => void
@@ -177,33 +176,6 @@ export const MapboxVisualization = ({
 
           console.log('State layers added')
         })
-        .catch(err => console.error('Error loading states:', err))
-
-      // Load Districts
-      fetch(INDIA_DISTRICTS_URL)
-        .then(res => res.json())
-        .then((data: FeatureCollection) => {
-          console.log('Districts loaded:', data.features.length)
-          
-          map.addSource('india-districts', {
-            type: 'geojson',
-            data: data,
-          })
-
-          map.addLayer({
-            id: 'district-borders',
-            type: 'line',
-            source: 'india-districts',
-            paint: {
-              'line-color': '#60a5fa',
-              'line-width': 0.8,
-              'line-opacity': 0.6,
-            },
-          }, 'india-state-borders')  // Insert before state borders
-
-          console.log('District layer added')
-        })
-        .catch(err => console.error('Error loading districts:', err))
     })
 
     // Hover handlers
