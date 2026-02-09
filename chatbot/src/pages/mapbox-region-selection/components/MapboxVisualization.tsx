@@ -1,7 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { FeatureCollection, Feature } from 'geojson'
+import type { FeatureCollection, Feature, Polygon, MultiPolygon } from 'geojson'
+import { getStateDistrictsCdnUrl } from '../../region-selection/constants'
+import * as turf from '@turf/turf'
 
 // India center coordinates
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937]
@@ -9,8 +11,6 @@ const INITIAL_ZOOM = 3.5
 
 // India States GeoJSON URL
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
-
-
 
 interface MapboxVisualizationProps {
   onStateClick?: (stateName: string) => void
@@ -24,11 +24,115 @@ export const MapboxVisualization = ({
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const hoveredStateIdRef = useRef<number | null>(null)
+  const [selectedState, setSelectedState] = useState<string | null>(null)
+  const statesDataRef = useRef<FeatureCollection | null>(null)
 
-  const handleStateClick = useCallback((stateName: string) => {
+  // Load districts for a selected state
+  const loadStateDistricts = useCallback((map: maplibregl.Map, stateName: string) => {
+    const districtsUrl = getStateDistrictsCdnUrl(stateName)
+    if (!districtsUrl) {
+      console.warn(`No district data URL for state: ${stateName}`)
+      return
+    }
+
+    console.log(`Loading districts for ${stateName}:`, districtsUrl)
+
+    fetch(districtsUrl)
+      .then(res => res.json())
+      .then((data: FeatureCollection) => {
+        console.log(`Districts loaded for ${stateName}:`, data.features.length)
+
+        // Remove existing district source and layers if they exist
+        if (map.getLayer('district-borders')) {
+          map.removeLayer('district-borders')
+        }
+        if (map.getLayer('district-fill')) {
+          map.removeLayer('district-fill')
+        }
+        if (map.getSource('state-districts')) {
+          map.removeSource('state-districts')
+        }
+
+        // Add new district source
+        map.addSource('state-districts', {
+          type: 'geojson',
+          data: data,
+        })
+
+        // District fill for hover
+        map.addLayer({
+          id: 'district-fill',
+          type: 'fill',
+          source: 'state-districts',
+          paint: {
+            'fill-color': 'rgba(0, 0, 0, 0)',
+            'fill-opacity': 0,
+          },
+        })
+
+        // District borders - cyan/blue
+        map.addLayer({
+          id: 'district-borders',
+          type: 'line',
+          source: 'state-districts',
+          paint: {
+            'line-color': '#22d3ee',
+            'line-width': 1.5,
+            'line-opacity': 0.9,
+          },
+        })
+      })
+      .catch(err => console.error(`Error loading districts for ${stateName}:`, err))
+  }, [])
+
+  // Zoom to state bounds
+  const zoomToState = useCallback((map: maplibregl.Map, stateName: string) => {
+    if (!statesDataRef.current) return
+
+    // Find the state feature
+    const stateFeature = statesDataRef.current.features.find(
+      f => f.properties?.ST_NM === stateName
+    )
+
+    if (!stateFeature || !stateFeature.geometry) {
+      console.warn(`State feature not found: ${stateName}`)
+      return
+    }
+
+    // Calculate bounding box using turf
+    const bbox = turf.bbox(stateFeature as Feature<Polygon | MultiPolygon>)
+    
+    // Fly to the state bounds
+    map.fitBounds(
+      [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] as maplibregl.LngLatBoundsLike,
+      {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        duration: 1500,
+        maxZoom: 8
+      }
+    )
+  }, [])
+
+  // Handle state click - zoom and load districts
+  const handleStateClick = useCallback((stateName: string, feature?: Feature) => {
     console.log('State clicked:', stateName)
+    
+    if (!mapRef.current) return
+
+    const map = mapRef.current
+
+    // Update selected state
+    setSelectedState(stateName)
+
+    // Zoom to state
+    zoomToState(map, stateName)
+
+    // Load districts for this state
+    loadStateDistricts(map, stateName)
+
+    // Notify parent
     onStateClick?.(stateName)
-  }, [onStateClick])
+  }, [onStateClick, zoomToState, loadStateDistricts])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -89,10 +193,8 @@ export const MapboxVisualization = ({
     })
 
     map.on('load', () => {
-      // Set globe projection
       map.setProjection({ type: 'globe' })
       
-      // Add sky/atmosphere effect (setSky works in MapLibre)
       map.setSky({
         'sky-color': '#0b0b19',
         'sky-horizon-blend': 0.4,
@@ -108,20 +210,21 @@ export const MapboxVisualization = ({
         .then((data: FeatureCollection) => {
           console.log('States loaded:', data.features.length)
           
-          // Add IDs for feature-state
+          // Store for later use (zoom to state)
+          statesDataRef.current = data
+          
           const featuresWithIds = data.features.map((f: Feature, i: number) => ({
             ...f,
             id: i
           }))
           
-          // Add source
           map.addSource('india-states', {
             type: 'geojson',
             data: { type: 'FeatureCollection', features: featuresWithIds },
             generateId: true
           })
 
-          // India country border - glow effect
+          // India country border - glow
           map.addLayer({
             id: 'india-border-glow',
             type: 'line',
@@ -218,11 +321,13 @@ export const MapboxVisualization = ({
       }
     })
 
-    // Click handler
+    // Click handler - zoom and load districts
     map.on('click', 'india-state-fill', (e) => {
       if (e.features && e.features.length > 0) {
         const stateName = e.features[0].properties?.ST_NM
-        if (stateName) handleStateClick(stateName)
+        if (stateName) {
+          handleStateClick(stateName, e.features[0] as Feature)
+        }
       }
     })
 
