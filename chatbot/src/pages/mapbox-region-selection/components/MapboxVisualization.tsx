@@ -5,6 +5,7 @@ import type { FeatureCollection, Feature, Polygon, MultiPolygon } from 'geojson'
 import { getStateDistrictsCdnUrl } from '../../region-selection/constants'
 import * as turf from '@turf/turf'
 import type { Region } from '../types'
+import { createDistrictKey } from '../types'
 
 // India center coordinates
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937]
@@ -25,8 +26,10 @@ interface MapboxVisualizationProps {
   onDistrictHover?: (districtName: string | null) => void
   // New props for region management
   regions?: Region[]
-  currentSelection?: Set<number>
+  currentSelection?: Set<string>  // Composite keys: "stateName_featureId"
   selectedState?: string | null
+  // Callback to provide parent with a method to get district features
+  onRegisterGetFeatures?: (getter: (ids: Set<number>) => GeoJSON.Feature[]) => void
 }
 
 interface TooltipState {
@@ -34,6 +37,14 @@ interface TooltipState {
   x: number
   y: number
   text: string
+  isRegion?: boolean
+  regionInfo?: {
+    name: string
+    regionalOfficer?: string
+    intelligentOfficer?: string
+    districtCount: number
+    state: string
+  }
 }
 
 export const MapboxVisualization = ({
@@ -43,6 +54,7 @@ export const MapboxVisualization = ({
   onDistrictHover,
   regions = [],
   currentSelection = new Set(),
+  onRegisterGetFeatures,
 }: MapboxVisualizationProps) => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -53,6 +65,8 @@ export const MapboxVisualization = ({
   const districtClickedRef = useRef<boolean>(false)
   const districtsLoadedRef = useRef<boolean>(false)
   const districtCountRef = useRef<number>(0)
+  // Store district features for retrieval
+  const districtFeaturesRef = useRef<Feature[]>([])
   
   // Tooltip state
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -81,6 +95,16 @@ export const MapboxVisualization = ({
     currentSelectionRef.current = currentSelection
   }, [onStateClick, onStateHover, onDistrictClick, onDistrictHover, regions, currentSelection])
 
+  // Register the getDistrictFeatures function with parent
+  useEffect(() => {
+    if (onRegisterGetFeatures) {
+      const getFeatures = (ids: Set<number>): GeoJSON.Feature[] => {
+        return districtFeaturesRef.current.filter(f => ids.has(f.id as number))
+      }
+      onRegisterGetFeatures(getFeatures)
+    }
+  }, [onRegisterGetFeatures])
+
   // Update district colors when regions or selection change
   useEffect(() => {
     const map = mapRef.current
@@ -92,11 +116,14 @@ export const MapboxVisualization = ({
     console.log('Updating feature states, count:', count, 'selection size:', currentSelection.size, 'state:', currentState)
     
     for (let featureId = 0; featureId < count; featureId++) {
+      // Create composite key for this featureId
+      const districtKey = currentState ? createDistrictKey(currentState, featureId) : null
+      
       // Only apply region color if it's for the current state
       const region = regions.find(r => 
-        r.state === currentState && r.districtIds.has(featureId)
+        r.state === currentState && r.districtIds.has(districtKey || '')
       )
-      const isSelected = currentSelection.has(featureId)
+      const isSelected = districtKey ? currentSelection.has(districtKey) : false
       
       map.setFeatureState(
         { source: 'state-districts', id: featureId },
@@ -107,6 +134,149 @@ export const MapboxVisualization = ({
       )
     }
   }, [regions, currentSelection])
+
+  // Update persistent all-regions layer when regions change
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    
+    // Wait for map to be ready
+    if (!map.isStyleLoaded()) {
+      const checkStyle = () => {
+        if (map.isStyleLoaded()) {
+          updateAllRegionsLayer()
+        }
+      }
+      map.once('styledata', checkStyle)
+      return
+    }
+    
+    updateAllRegionsLayer()
+    
+    function updateAllRegionsLayer() {
+      // Collect all features from all regions with geometry
+      const allFeatures: GeoJSON.Feature[] = []
+      
+      regions.forEach((region) => {
+        if (region.geometry) {
+          region.geometry.forEach(feature => {
+            allFeatures.push({
+              ...feature,
+              properties: {
+                ...feature.properties,
+                regionId: region.id,
+                regionName: region.name,
+                regionColor: region.color,
+                regionState: region.state,
+                regionalOfficer: region.regionalOfficer,
+                intelligentOfficer: region.intelligentOfficer,
+                districtCount: region.districtIds.size
+              },
+              id: allFeatures.length
+            })
+          })
+        }
+      })
+      
+      const featureCollection: FeatureCollection = {
+        type: 'FeatureCollection',
+        features: allFeatures
+      }
+      
+      // Update or create the source
+      if (!map) return
+      const existingSource = map.getSource('all-regions') as maplibregl.GeoJSONSource
+      
+      if (existingSource) {
+        existingSource.setData(featureCollection)
+      } else if (allFeatures.length > 0) {
+        // Add source and layer for persistent regions
+        map.addSource('all-regions', {
+          type: 'geojson',
+          data: featureCollection
+        })
+        
+        // Add fill layer for persistent regions
+        map.addLayer({
+          id: 'all-regions-fill',
+          type: 'fill',
+          source: 'all-regions',
+          paint: {
+            'fill-color': ['get', 'regionColor'],
+            'fill-opacity': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              0.85,
+              0.65
+            ]
+          }
+        }, 'india-state-fill') // Insert below state fill layer
+        
+        // Add border layer for persistent regions
+        map.addLayer({
+          id: 'all-regions-border',
+          type: 'line',
+          source: 'all-regions',
+          paint: {
+            'line-color': ['get', 'regionColor'],
+            'line-width': 2,
+            'line-opacity': 0.9
+          }
+        }, 'india-state-fill')
+        
+        // Add hover handlers for all-regions layer
+        map.on('mouseenter', 'all-regions-fill', () => {
+          map.getCanvas().style.cursor = 'pointer'
+        })
+        
+        map.on('mouseleave', 'all-regions-fill', () => {
+          map.getCanvas().style.cursor = ''
+          // Clear hover state for all features
+          const features = map.querySourceFeatures('all-regions')
+          features.forEach(f => {
+            if (f.id !== undefined) {
+              map.setFeatureState(
+                { source: 'all-regions', id: f.id },
+                { hover: false }
+              )
+            }
+          })
+          setTooltip(prev => ({ ...prev, visible: false }))
+        })
+        
+        map.on('mousemove', 'all-regions-fill', (e) => {
+          if (e.features && e.features.length > 0) {
+            const feature = e.features[0]
+            const featureId = feature.id as number
+            
+            // Set hover state
+            map.setFeatureState(
+              { source: 'all-regions', id: featureId },
+              { hover: true }
+            )
+            
+            // Show region tooltip
+            const props = feature.properties
+            setTooltip({
+              visible: true,
+              x: e.originalEvent.clientX,
+              y: e.originalEvent.clientY,
+              text: props?.regionName || 'Unknown Region',
+              isRegion: true,
+              regionInfo: {
+                name: props?.regionName || 'Unknown',
+                regionalOfficer: props?.regionalOfficer,
+                intelligentOfficer: props?.intelligentOfficer,
+                districtCount: props?.districtCount || 0,
+                state: props?.regionState || ''
+              }
+            })
+          }
+        })
+      }
+    }
+  }, [regions])
+
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -292,14 +462,17 @@ export const MapboxVisualization = ({
 
           districtsLoadedRef.current = true
           districtCountRef.current = featuresWithIds.length
+          // Store features for retrieval when saving regions
+          districtFeaturesRef.current = featuresWithIds
           console.log('Districts setup complete, count:', featuresWithIds.length)
           
           // Apply region colors only for regions belonging to THIS state
           // Note: We don't apply old selections here because feature IDs are reused per state
           for (let featureId = 0; featureId < featuresWithIds.length; featureId++) {
-            // Only apply region color if the region is for this state
+            // Create composite key and check if region contains this district
+            const districtKey = createDistrictKey(stateName, featureId)
             const region = regionsRef.current.find(r => 
-              r.state === stateName && r.districtIds.has(featureId)
+              r.state === stateName && r.districtIds.has(districtKey)
             )
             
             if (region) {
@@ -583,9 +756,26 @@ export const MapboxVisualization = ({
             left: tooltip.x + 12,
             top: tooltip.y - 10,
             pointerEvents: 'none',
+            minWidth: tooltip.isRegion ? '180px' : 'auto'
           }}
         >
-          {tooltip.text}
+          {tooltip.isRegion && tooltip.regionInfo ? (
+            <div className="space-y-1">
+              <div className="font-semibold text-base">{tooltip.regionInfo.name}</div>
+              <div className="text-xs text-muted-foreground">{tooltip.regionInfo.state}</div>
+              <div className="text-xs space-y-0.5 pt-1 border-t border-border mt-1">
+                <div>{tooltip.regionInfo.districtCount} district{tooltip.regionInfo.districtCount !== 1 ? 's' : ''}</div>
+                {tooltip.regionInfo.regionalOfficer && (
+                  <div>RO: {tooltip.regionInfo.regionalOfficer}</div>
+                )}
+                {tooltip.regionInfo.intelligentOfficer && (
+                  <div>IO: {tooltip.regionInfo.intelligentOfficer}</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            tooltip.text
+          )}
         </div>
       )}
     </div>

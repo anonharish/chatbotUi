@@ -1,14 +1,15 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { MapboxVisualization } from './components/MapboxVisualization'
 import type { Region, DistrictInfo } from './types'
-import { generateId, getNextColor } from './types'
+import { generateId, getNextColor, createDistrictKey, parseDistrictKey } from './types'
 
 const MapboxRegionSelectionPage = () => {
   // State management
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [regions, setRegions] = useState<Region[]>([])
-  const [currentSelection, setCurrentSelection] = useState<Set<number>>(new Set())
-  const [districtInfoMap, setDistrictInfoMap] = useState<Map<number, DistrictInfo>>(new Map())
+  // Use string composite keys: "stateName_featureId"
+  const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set())
+  const [districtInfoMap, setDistrictInfoMap] = useState<Map<string, DistrictInfo>>(new Map())
   
   // Form state
   const [regionName, setRegionName] = useState('')
@@ -18,13 +19,16 @@ const MapboxRegionSelectionPage = () => {
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
+  
+  // Ref for getting district features from map (accepts numeric feature IDs)
+  const getDistrictFeaturesRef = useRef<((ids: Set<number>) => GeoJSON.Feature[]) | null>(null)
 
-  // Build a map of districtId to region for quick lookup
+  // Build a map of composite districtKey to region for quick lookup
   const districtToRegion = useMemo(() => {
-    const map = new Map<number, Region>()
+    const map = new Map<string, Region>()
     regions.forEach(region => {
-      region.districtIds.forEach(id => {
-        map.set(id, region)
+      region.districtIds.forEach(key => {
+        map.set(key, region)
       })
     })
     return map
@@ -40,22 +44,25 @@ const MapboxRegionSelectionPage = () => {
 
   // Handle district click - toggle selection
   const handleDistrictClick = useCallback((districtId: number, districtName: string, stateName: string) => {
+    // Create composite key for unique identification
+    const districtKey = createDistrictKey(stateName, districtId)
+    
     // Check if already in a region
-    if (districtToRegion.has(districtId)) {
-      console.log('District already assigned to a region')
+    if (districtToRegion.has(districtKey)) {
+      console.log('District already assigned to a region:', districtToRegion,districtKey)
       return
     }
 
     setCurrentSelection(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(districtId)) {
-        newSet.delete(districtId)
+      if (newSet.has(districtKey)) {
+        newSet.delete(districtKey)
       } else {
-        newSet.add(districtId)
+        newSet.add(districtKey)
         // Store district info for display
         setDistrictInfoMap(prevMap => {
           const newMap = new Map(prevMap)
-          newMap.set(districtId, { id: districtId, name: districtName, state: stateName })
+          newMap.set(districtKey, { id: districtKey, featureId: districtId, name: districtName, state: stateName })
           return newMap
         })
       }
@@ -65,9 +72,10 @@ const MapboxRegionSelectionPage = () => {
 
   // Get selected district data for display
   const selectedDistrictsData = useMemo(() => {
-    return Array.from(currentSelection).map(id => {
-      const info = districtInfoMap.get(id)
-      return info || { id, name: `District ${id}`, state: selectedState || '' }
+    return Array.from(currentSelection).map(key => {
+      const info = districtInfoMap.get(key)
+      const parsed = parseDistrictKey(key)
+      return info || { id: key, featureId: parsed?.featureId || 0, name: `District ${parsed?.featureId}`, state: parsed?.state || selectedState || '' }
     })
   }, [currentSelection, districtInfoMap, selectedState])
 
@@ -84,6 +92,17 @@ const MapboxRegionSelectionPage = () => {
     if (currentSelection.size === 0 || !regionName.trim() || !selectedState) return
 
     const usedColors = regions.map(r => r.color)
+    // Get district geometries for persistent rendering
+    // Extract numeric feature IDs for the current state only
+    const featureIds = new Set<number>()
+    currentSelection.forEach(key => {
+      const parsed = parseDistrictKey(key)
+      if (parsed && parsed.state === selectedState) {
+        featureIds.add(parsed.featureId)
+      }
+    })
+    const geometry = getDistrictFeaturesRef.current?.(featureIds) || []
+    
     const newRegion: Region = {
       id: generateId(),
       name: regionName.trim(),
@@ -93,6 +112,7 @@ const MapboxRegionSelectionPage = () => {
       regionalOfficer: regionalOfficer.trim(),
       intelligentOfficer: intelligentOfficer.trim(),
       state: selectedState,
+      geometry: geometry,
     }
 
     setRegions(prev => [...prev, newRegion])
@@ -105,10 +125,10 @@ const MapboxRegionSelectionPage = () => {
   }, [])
 
   // Remove district from selection
-  const removeFromSelection = useCallback((districtId: number) => {
+  const removeFromSelection = useCallback((districtKey: string) => {
     setCurrentSelection(prev => {
       const newSet = new Set(prev)
-      newSet.delete(districtId)
+      newSet.delete(districtKey)
       return newSet
     })
   }, [])
@@ -156,6 +176,7 @@ const MapboxRegionSelectionPage = () => {
         regions={regions}
         currentSelection={currentSelection}
         selectedState={selectedState}
+        onRegisterGetFeatures={(getter) => { getDistrictFeaturesRef.current = getter }}
       />
 
       {/* Top Left - Location Breadcrumb */}

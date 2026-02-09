@@ -4,17 +4,32 @@ export interface Region {
   id: string
   name: string
   color: string
-  districtIds: Set<number>    // Feature IDs for map rendering
+  districtIds: Set<string>    // Composite keys: "stateName_featureId" for unique identification
   districtNames: string[]     // Display names
   regionalOfficer: string
   intelligentOfficer: string
   state: string               // Parent state name
+  // GeoJSON features for persistent rendering across all states
+  geometry?: GeoJSON.Feature[]
 }
 
 export interface DistrictInfo {
-  id: number      // Feature ID
+  id: string      // Composite key: "stateName_featureId"
+  featureId: number  // Numeric ID for MapLibre feature-state
   name: string    // Display name
   state: string   // Parent state
+}
+
+// Create composite district key
+export const createDistrictKey = (state: string, featureId: number): string => `${state}_${featureId}`
+
+// Parse composite district key
+export const parseDistrictKey = (key: string): { state: string, featureId: number } | null => {
+  const lastUnderscore = key.lastIndexOf('_')
+  if (lastUnderscore === -1) return null
+  const state = key.substring(0, lastUnderscore)
+  const featureId = parseInt(key.substring(lastUnderscore + 1), 10)
+  return isNaN(featureId) ? null : { state, featureId }
 }
 
 // Colors for regions (vibrant palette)
