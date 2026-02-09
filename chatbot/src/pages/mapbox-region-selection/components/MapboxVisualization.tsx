@@ -1,14 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { FeatureCollection } from 'geojson'
+import type { FeatureCollection, Feature } from 'geojson'
 
 // India center coordinates
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937]
 const INITIAL_ZOOM = 3.5
-
-// Natural Earth country boundaries GeoJSON URL
-const COUNTRY_BOUNDARIES_URL = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson'
 
 // India States GeoJSON URL
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
@@ -27,7 +24,12 @@ export const MapboxVisualization = ({
 }: MapboxVisualizationProps) => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  const dataLoadedRef = useRef({ states: false, districts: false })
+  const hoveredStateIdRef = useRef<number | null>(null)
+
+  const handleStateClick = useCallback((stateName: string) => {
+    console.log('State clicked:', stateName)
+    onStateClick?.(stateName)
+  }, [onStateClick])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -38,7 +40,6 @@ export const MapboxVisualization = ({
         version: 8,
         name: 'Satellite Globe',
         sources: {
-          // ESRI Satellite imagery
           'esri-satellite': {
             type: 'raster',
             tiles: [
@@ -47,7 +48,6 @@ export const MapboxVisualization = ({
             tileSize: 256,
             maxzoom: 19,
           },
-          // Labels overlay
           'carto-labels': {
             type: 'raster',
             tiles: [
@@ -58,24 +58,8 @@ export const MapboxVisualization = ({
             tileSize: 256,
             maxzoom: 20,
           },
-          // Country boundaries
-          'country-boundaries': {
-            type: 'geojson',
-            data: COUNTRY_BOUNDARIES_URL,
-          },
-          // India states
-          'india-states': {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-          },
-          // India districts
-          'india-districts': {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-          },
         },
         layers: [
-          // Satellite base layer
           {
             id: 'satellite-layer',
             type: 'raster',
@@ -89,54 +73,6 @@ export const MapboxVisualization = ({
               'raster-contrast': 0.1,
             },
           },
-          // Country borders - coral/pink
-          {
-            id: 'country-borders',
-            type: 'line',
-            source: 'country-boundaries',
-            maxzoom: 6,
-            paint: {
-              'line-color': '#ff9999',
-              'line-width': ['interpolate', ['linear'], ['zoom'], 0, 0.5, 4, 1.5, 6, 0.5],
-              'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 5, 0.6, 6, 0],
-            },
-          },
-          // India state borders - bright green
-          {
-            id: 'india-state-borders',
-            type: 'line',
-            source: 'india-states',
-            minzoom: 3,
-            paint: {
-              'line-color': '#8BC462',
-              'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1, 5, 2, 8, 3],
-              'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.3, 4, 0.8, 6, 1],
-            },
-          },
-          // India state fill (for hover/click)
-          {
-            id: 'india-state-fill',
-            type: 'fill',
-            source: 'india-states',
-            minzoom: 3,
-            paint: {
-              'fill-color': 'transparent',
-              'fill-opacity': 0,
-            },
-          },
-          // District borders - cyan/blue
-          {
-            id: 'district-borders',
-            type: 'line',
-            source: 'india-districts',
-            minzoom: 5,
-            paint: {
-              'line-color': '#22d3ee',
-              'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.3, 7, 1, 10, 1.5],
-              'line-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 0.6, 7, 0.9],
-            },
-          },
-          // Labels layer on top
           {
             id: 'labels-layer',
             type: 'raster',
@@ -153,83 +89,179 @@ export const MapboxVisualization = ({
       maxPitch: 85,
     })
 
-    // Enable globe projection
-    map.on('style.load', () => {
+    map.on('load', () => {
+      // Set globe projection
       map.setProjection({ type: 'globe' })
       
-      // Dark space atmosphere
+      // Add sky/atmosphere effect (setSky works in MapLibre)
       map.setSky({
-        'sky-color': '#0f172a',
-        'sky-horizon-blend': 0.5,
-        'horizon-color': '#1e3a5f',
-        'horizon-fog-blend': 0.3,
-        'fog-color': '#0f172a',
-        'fog-ground-blend': 0.9,
+        'sky-color': '#0b0b19',
+        'sky-horizon-blend': 0.4,
+        'horizon-color': '#1e3a8a',
+        'horizon-fog-blend': 0.2,
+        'fog-color': '#172554',
+        'fog-ground-blend': 0.8,
       })
 
-      // Load India states
-      if (!dataLoadedRef.current.states) {
-        fetch(INDIA_STATES_URL)
-          .then(res => res.json())
-          .then((data: FeatureCollection) => {
-            const source = map.getSource('india-states') as maplibregl.GeoJSONSource
-            if (source) {
-              source.setData(data)
-              dataLoadedRef.current.states = true
-            }
+      // Load India States
+      fetch(INDIA_STATES_URL)
+        .then(res => res.json())
+        .then((data: FeatureCollection) => {
+          console.log('States loaded:', data.features.length)
+          
+          // Add IDs for feature-state
+          const featuresWithIds = data.features.map((f: Feature, i: number) => ({
+            ...f,
+            id: i
+          }))
+          
+          // Add source
+          map.addSource('india-states', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: featuresWithIds },
+            generateId: true
           })
-          .catch(err => console.error('Error loading India states:', err))
-      }
 
-      // Load India districts
-      if (!dataLoadedRef.current.districts) {
-        fetch(INDIA_DISTRICTS_URL)
-          .then(res => res.json())
-          .then((data: FeatureCollection) => {
-            const source = map.getSource('india-districts') as maplibregl.GeoJSONSource
-            if (source) {
-              source.setData(data)
-              dataLoadedRef.current.districts = true
-            }
+          // India country border - glow effect
+          map.addLayer({
+            id: 'india-border-glow',
+            type: 'line',
+            source: 'india-states',
+            paint: {
+              'line-color': '#ff6b6b',
+              'line-width': 8,
+              'line-opacity': 0.3,
+              'line-blur': 4,
+            },
           })
-          .catch(err => console.error('Error loading India districts:', err))
-      }
+
+          // India country border - main
+          map.addLayer({
+            id: 'india-border-main',
+            type: 'line',
+            source: 'india-states',
+            paint: {
+              'line-color': '#ff4757',
+              'line-width': 3,
+              'line-opacity': 0.9,
+            },
+          })
+
+          // State fill for hover/click
+          map.addLayer({
+            id: 'india-state-fill',
+            type: 'fill',
+            source: 'india-states',
+            paint: {
+              'fill-color': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false],
+                'rgba(139, 196, 98, 0.4)',
+                'rgba(0, 0, 0, 0)'
+              ],
+              'fill-opacity': 1,
+            },
+          })
+
+          // State borders - green
+          map.addLayer({
+            id: 'india-state-borders',
+            type: 'line',
+            source: 'india-states',
+            paint: {
+              'line-color': '#8BC462',
+              'line-width': 2,
+              'line-opacity': 0.9,
+            },
+          })
+
+          console.log('State layers added')
+        })
+        .catch(err => console.error('Error loading states:', err))
+
+      // Load Districts
+      fetch(INDIA_DISTRICTS_URL)
+        .then(res => res.json())
+        .then((data: FeatureCollection) => {
+          console.log('Districts loaded:', data.features.length)
+          
+          map.addSource('india-districts', {
+            type: 'geojson',
+            data: data,
+          })
+
+          map.addLayer({
+            id: 'district-borders',
+            type: 'line',
+            source: 'india-districts',
+            paint: {
+              'line-color': '#60a5fa',
+              'line-width': 0.8,
+              'line-opacity': 0.6,
+            },
+          }, 'india-state-borders')  // Insert before state borders
+
+          console.log('District layer added')
+        })
+        .catch(err => console.error('Error loading districts:', err))
     })
 
-    // State hover handlers
+    // Hover handlers
     map.on('mouseenter', 'india-state-fill', () => {
       map.getCanvas().style.cursor = 'pointer'
     })
 
     map.on('mouseleave', 'india-state-fill', () => {
       map.getCanvas().style.cursor = ''
+      if (hoveredStateIdRef.current !== null) {
+        map.setFeatureState(
+          { source: 'india-states', id: hoveredStateIdRef.current },
+          { hover: false }
+        )
+      }
+      hoveredStateIdRef.current = null
       onStateHover?.(null)
     })
 
     map.on('mousemove', 'india-state-fill', (e) => {
       if (e.features && e.features.length > 0) {
-        const stateName = e.features[0].properties?.ST_NM
+        const feature = e.features[0]
+        const featureId = feature.id as number
+        
+        if (hoveredStateIdRef.current !== null && hoveredStateIdRef.current !== featureId) {
+          map.setFeatureState(
+            { source: 'india-states', id: hoveredStateIdRef.current },
+            { hover: false }
+          )
+        }
+        
+        hoveredStateIdRef.current = featureId
+        map.setFeatureState(
+          { source: 'india-states', id: featureId },
+          { hover: true }
+        )
+        
+        const stateName = feature.properties?.ST_NM
         if (stateName) onStateHover?.(stateName)
       }
     })
 
+    // Click handler
     map.on('click', 'india-state-fill', (e) => {
       if (e.features && e.features.length > 0) {
         const stateName = e.features[0].properties?.ST_NM
-        if (stateName) onStateClick?.(stateName)
+        if (stateName) handleStateClick(stateName)
       }
     })
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
-
     mapRef.current = map
 
     return () => {
       map.remove()
       mapRef.current = null
-      dataLoadedRef.current = { states: false, districts: false }
     }
-  }, [onStateClick, onStateHover])
+  }, [onStateHover, handleStateClick])
 
   return (
     <div 
