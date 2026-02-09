@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { FeatureCollection, Feature, Polygon, MultiPolygon } from 'geojson'
@@ -12,127 +12,61 @@ const INITIAL_ZOOM = 3.5
 // India States GeoJSON URL
 const INDIA_STATES_URL = 'https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson'
 
+// Colors
+const DISTRICT_HOVER_COLOR = 'rgba(245, 222, 179, 0.6)'  // Beige/wheat
+const DISTRICT_SELECTED_COLOR = 'rgba(135, 206, 250, 0.7)'  // Light sky blue
+const DISTRICT_BORDER_COLOR = '#22d3ee'  // Cyan
+
 interface MapboxVisualizationProps {
   onStateClick?: (stateName: string) => void
   onStateHover?: (stateName: string | null) => void
+  onDistrictClick?: (districtName: string, stateName: string) => void
+  onDistrictHover?: (districtName: string | null) => void
+}
+
+interface TooltipState {
+  visible: boolean
+  x: number
+  y: number
+  text: string
 }
 
 export const MapboxVisualization = ({
   onStateClick,
   onStateHover,
+  onDistrictClick,
+  onDistrictHover,
 }: MapboxVisualizationProps) => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const hoveredStateIdRef = useRef<number | null>(null)
-  const [selectedState, setSelectedState] = useState<string | null>(null)
+  const hoveredDistrictIdRef = useRef<number | null>(null)
+  const selectedStateRef = useRef<string | null>(null)
+  const selectedDistrictsRef = useRef<Set<number>>(new Set())
   const statesDataRef = useRef<FeatureCollection | null>(null)
-
-  // Load districts for a selected state
-  const loadStateDistricts = useCallback((map: maplibregl.Map, stateName: string) => {
-    const districtsUrl = getStateDistrictsCdnUrl(stateName)
-    if (!districtsUrl) {
-      console.warn(`No district data URL for state: ${stateName}`)
-      return
-    }
-
-    console.log(`Loading districts for ${stateName}:`, districtsUrl)
-
-    fetch(districtsUrl)
-      .then(res => res.json())
-      .then((data: FeatureCollection) => {
-        console.log(`Districts loaded for ${stateName}:`, data.features.length)
-
-        // Remove existing district source and layers if they exist
-        if (map.getLayer('district-borders')) {
-          map.removeLayer('district-borders')
-        }
-        if (map.getLayer('district-fill')) {
-          map.removeLayer('district-fill')
-        }
-        if (map.getSource('state-districts')) {
-          map.removeSource('state-districts')
-        }
-
-        // Add new district source
-        map.addSource('state-districts', {
-          type: 'geojson',
-          data: data,
-        })
-
-        // District fill for hover
-        map.addLayer({
-          id: 'district-fill',
-          type: 'fill',
-          source: 'state-districts',
-          paint: {
-            'fill-color': 'rgba(0, 0, 0, 0)',
-            'fill-opacity': 0,
-          },
-        })
-
-        // District borders - cyan/blue
-        map.addLayer({
-          id: 'district-borders',
-          type: 'line',
-          source: 'state-districts',
-          paint: {
-            'line-color': '#22d3ee',
-            'line-width': 1.5,
-            'line-opacity': 0.9,
-          },
-        })
-      })
-      .catch(err => console.error(`Error loading districts for ${stateName}:`, err))
-  }, [])
-
-  // Zoom to state bounds
-  const zoomToState = useCallback((map: maplibregl.Map, stateName: string) => {
-    if (!statesDataRef.current) return
-
-    // Find the state feature
-    const stateFeature = statesDataRef.current.features.find(
-      f => f.properties?.ST_NM === stateName
-    )
-
-    if (!stateFeature || !stateFeature.geometry) {
-      console.warn(`State feature not found: ${stateName}`)
-      return
-    }
-
-    // Calculate bounding box using turf
-    const bbox = turf.bbox(stateFeature as Feature<Polygon | MultiPolygon>)
-    
-    // Fly to the state bounds
-    map.fitBounds(
-      [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] as maplibregl.LngLatBoundsLike,
-      {
-        padding: { top: 50, bottom: 50, left: 50, right: 50 },
-        duration: 1500,
-        maxZoom: 8
-      }
-    )
-  }, [])
-
-  // Handle state click - zoom and load districts
-  const handleStateClick = useCallback((stateName: string, feature?: Feature) => {
-    console.log('State clicked:', stateName)
-    
-    if (!mapRef.current) return
-
-    const map = mapRef.current
-
-    // Update selected state
-    setSelectedState(stateName)
-
-    // Zoom to state
-    zoomToState(map, stateName)
-
-    // Load districts for this state
-    loadStateDistricts(map, stateName)
-
-    // Notify parent
-    onStateClick?.(stateName)
-  }, [onStateClick, zoomToState, loadStateDistricts])
+  const districtClickedRef = useRef<boolean>(false)
+  
+  // Tooltip state
+  const [tooltip, setTooltip] = useState<TooltipState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    text: ''
+  })
+  
+  // Store callbacks in refs to avoid useEffect re-runs
+  const onStateClickRef = useRef(onStateClick)
+  const onStateHoverRef = useRef(onStateHover)
+  const onDistrictClickRef = useRef(onDistrictClick)
+  const onDistrictHoverRef = useRef(onDistrictHover)
+  
+  // Update refs when props change
+  useEffect(() => {
+    onStateClickRef.current = onStateClick
+    onStateHoverRef.current = onStateHover
+    onDistrictClickRef.current = onDistrictClick
+    onDistrictHoverRef.current = onDistrictHover
+  }, [onStateClick, onStateHover, onDistrictClick, onDistrictHover])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -192,6 +126,141 @@ export const MapboxVisualization = ({
       maxPitch: 85,
     })
 
+    // Helper: Zoom to state bounds
+    const zoomToState = (stateName: string) => {
+      if (!statesDataRef.current) return
+
+      const stateFeature = statesDataRef.current.features.find(
+        f => f.properties?.ST_NM === stateName
+      )
+
+      if (!stateFeature || !stateFeature.geometry) {
+        console.warn(`State feature not found: ${stateName}`)
+        return
+      }
+
+      const bbox = turf.bbox(stateFeature as Feature<Polygon | MultiPolygon>)
+      
+      map.fitBounds(
+        [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] as maplibregl.LngLatBoundsLike,
+        {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          duration: 1500,
+          maxZoom: 8
+        }
+      )
+    }
+
+    // Helper: Load districts for a state
+    const loadStateDistricts = (stateName: string) => {
+      const districtsUrl = getStateDistrictsCdnUrl(stateName)
+      if (!districtsUrl) {
+        console.warn(`No district data URL for state: ${stateName}`)
+        return
+      }
+
+      console.log(`Loading districts for ${stateName}:`, districtsUrl)
+
+      fetch(districtsUrl)
+        .then(res => res.json())
+        .then((data: FeatureCollection) => {
+          console.log(`Districts loaded for ${stateName}:`, data.features.length)
+
+          // Remove existing district source and layers if they exist
+          if (map.getLayer('district-borders')) {
+            map.removeLayer('district-borders')
+          }
+          if (map.getLayer('district-fill')) {
+            map.removeLayer('district-fill')
+          }
+          if (map.getSource('state-districts')) {
+            map.removeSource('state-districts')
+          }
+
+          // Add IDs for feature-state
+          const featuresWithIds = data.features.map((f: Feature, i: number) => ({
+            ...f,
+            id: i
+          }))
+
+          // Add new district source
+          map.addSource('state-districts', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: featuresWithIds },
+            generateId: true
+          })
+
+          // District fill for hover and selection
+          map.addLayer({
+            id: 'district-fill',
+            type: 'fill',
+            source: 'state-districts',
+            paint: {
+              'fill-color': [
+                'case',
+                ['boolean', ['feature-state', 'selected'], false],
+                DISTRICT_SELECTED_COLOR,
+                ['boolean', ['feature-state', 'hover'], false],
+                DISTRICT_HOVER_COLOR,
+                'rgba(0, 0, 0, 0)'
+              ],
+              'fill-opacity': 1,
+            },
+          })
+
+          // District borders - cyan
+          map.addLayer({
+            id: 'district-borders',
+            type: 'line',
+            source: 'state-districts',
+            paint: {
+              'line-color': DISTRICT_BORDER_COLOR,
+              'line-width': 1.5,
+              'line-opacity': 0.9,
+            },
+          })
+
+          // Clear selected districts when loading new state
+          selectedDistrictsRef.current = new Set()
+        })
+        .catch(err => console.error(`Error loading districts for ${stateName}:`, err))
+    }
+
+    // Helper: Handle state click
+    const handleStateClick = (stateName: string) => {
+      console.log('State clicked:', stateName)
+      
+      selectedStateRef.current = stateName
+      zoomToState(stateName)
+      loadStateDistricts(stateName)
+      onStateClickRef.current?.(stateName)
+    }
+
+    // Helper: Handle district click
+    const handleDistrictClick = (districtName: string, featureId: number) => {
+      console.log('District clicked:', districtName)
+      
+      const currentSelected = selectedDistrictsRef.current
+      
+      if (currentSelected.has(featureId)) {
+        // Deselect
+        currentSelected.delete(featureId)
+        map.setFeatureState(
+          { source: 'state-districts', id: featureId },
+          { selected: false }
+        )
+      } else {
+        // Select
+        currentSelected.add(featureId)
+        map.setFeatureState(
+          { source: 'state-districts', id: featureId },
+          { selected: true }
+        )
+      }
+
+      onDistrictClickRef.current?.(districtName, selectedStateRef.current || '')
+    }
+
     map.on('load', () => {
       map.setProjection({ type: 'globe' })
       
@@ -210,7 +279,6 @@ export const MapboxVisualization = ({
         .then((data: FeatureCollection) => {
           console.log('States loaded:', data.features.length)
           
-          // Store for later use (zoom to state)
           statesDataRef.current = data
           
           const featuresWithIds = data.features.map((f: Feature, i: number) => ({
@@ -281,7 +349,7 @@ export const MapboxVisualization = ({
         })
     })
 
-    // Hover handlers
+    // === STATE HOVER HANDLERS ===
     map.on('mouseenter', 'india-state-fill', () => {
       map.getCanvas().style.cursor = 'pointer'
     })
@@ -295,7 +363,7 @@ export const MapboxVisualization = ({
         )
       }
       hoveredStateIdRef.current = null
-      onStateHover?.(null)
+      onStateHoverRef.current?.(null)
     })
 
     map.on('mousemove', 'india-state-fill', (e) => {
@@ -317,17 +385,105 @@ export const MapboxVisualization = ({
         )
         
         const stateName = feature.properties?.ST_NM
-        if (stateName) onStateHover?.(stateName)
+        if (stateName) onStateHoverRef.current?.(stateName)
       }
     })
 
-    // Click handler - zoom and load districts
+    // State click handler
     map.on('click', 'india-state-fill', (e) => {
+      // Skip if a district was just clicked
+      if (districtClickedRef.current) {
+        districtClickedRef.current = false
+        return
+      }
+      
+      // Check if clicking on a district (district layer takes priority)
+      if (map.getLayer('district-fill')) {
+        const districtFeatures = map.queryRenderedFeatures(e.point, { layers: ['district-fill'] })
+        if (districtFeatures && districtFeatures.length > 0) {
+          // District exists at this point, let district handler handle it
+          return
+        }
+      }
+      
       if (e.features && e.features.length > 0) {
         const stateName = e.features[0].properties?.ST_NM
         if (stateName) {
-          handleStateClick(stateName, e.features[0] as Feature)
+          handleStateClick(stateName)
         }
+      }
+    })
+
+    // === DISTRICT HOVER HANDLERS ===
+    map.on('mouseenter', 'district-fill', () => {
+      map.getCanvas().style.cursor = 'pointer'
+    })
+
+    map.on('mouseleave', 'district-fill', () => {
+      map.getCanvas().style.cursor = ''
+      if (hoveredDistrictIdRef.current !== null) {
+        map.setFeatureState(
+          { source: 'state-districts', id: hoveredDistrictIdRef.current },
+          { hover: false }
+        )
+      }
+      hoveredDistrictIdRef.current = null
+      setTooltip(prev => ({ ...prev, visible: false }))
+      onDistrictHoverRef.current?.(null)
+    })
+
+    map.on('mousemove', 'district-fill', (e) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0]
+        const featureId = feature.id as number
+        
+        if (hoveredDistrictIdRef.current !== null && hoveredDistrictIdRef.current !== featureId) {
+          map.setFeatureState(
+            { source: 'state-districts', id: hoveredDistrictIdRef.current },
+            { hover: false }
+          )
+        }
+        
+        hoveredDistrictIdRef.current = featureId
+        map.setFeatureState(
+          { source: 'state-districts', id: featureId },
+          { hover: true }
+        )
+        
+        // Get district name (try different property names)
+        const districtName = feature.properties?.district || 
+                            feature.properties?.DISTRICT || 
+                            feature.properties?.name ||
+                            feature.properties?.NAME ||
+                            'Unknown District'
+        
+        // Show tooltip at cursor position
+        setTooltip({
+          visible: true,
+          x: e.originalEvent.clientX,
+          y: e.originalEvent.clientY,
+          text: districtName
+        })
+        
+        onDistrictHoverRef.current?.(districtName)
+      }
+    })
+
+    // District click handler - toggle selection
+    map.on('click', 'district-fill', (e) => {
+      // Set flag to prevent state click handler from firing
+      districtClickedRef.current = true
+      
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0]
+        const featureId = feature.id as number
+        const districtName = feature.properties?.district || 
+                            feature.properties?.DISTRICT || 
+                            feature.properties?.name ||
+                            feature.properties?.NAME ||
+                            'Unknown District'
+        
+        handleDistrictClick(districtName, featureId)
       }
     })
 
@@ -338,13 +494,29 @@ export const MapboxVisualization = ({
       map.remove()
       mapRef.current = null
     }
-  }, [onStateHover, handleStateClick])
+  }, [])
 
   return (
-    <div 
-      ref={mapContainer} 
-      className="w-full h-full"
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-    />
+    <div className="relative w-full h-full">
+      <div 
+        ref={mapContainer} 
+        className="w-full h-full"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+      
+      {/* Shadcn-style tooltip */}
+      {tooltip.visible && (
+        <div
+          className="fixed z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+          style={{
+            left: tooltip.x + 12,
+            top: tooltip.y - 10,
+            pointerEvents: 'none',
+          }}
+        >
+          {tooltip.text}
+        </div>
+      )}
+    </div>
   )
 }
