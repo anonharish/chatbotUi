@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 // Lazy load pages for optimal bundle splitting
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const DirectoryPage = lazy(() => import('@/pages/DirectoryPage')) // ✅ ADDED
 
 // Loading fallback component
 const PageLoader = () => (
@@ -35,12 +36,12 @@ export const router = createBrowserRouter([
         path: 'chat',
         element: withSuspense(HomePage),
       },
-      // Add more routes here as needed
-      // Example:
-      // {
-      //   path: 'settings',
-      //   element: withSuspense(SettingsPage),
-      // },
+
+      // ✅ NEW ROUTE
+      {
+        path: 'directory',
+        element: withSuspense(DirectoryPage),
+      },
     ],
   },
   {
