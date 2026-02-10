@@ -49,7 +49,6 @@ const MapboxRegionSelectionPage = () => {
     
     // Check if already in a region
     if (districtToRegion.has(districtKey)) {
-      console.log('District already assigned to a region:', districtToRegion,districtKey)
       return
     }
 
