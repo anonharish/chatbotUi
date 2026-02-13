@@ -115,7 +115,6 @@ export const MapboxVisualization = ({
     
     const count = districtCountRef.current
     const currentState = selectedStateRef.current
-    console.log('Updating feature states, count:', count, 'selection size:', currentSelection.size, 'state:', currentState)
     
     for (let featureId = 0; featureId < count; featureId++) {
       // Create composite key for this featureId
@@ -466,8 +465,6 @@ export const MapboxVisualization = ({
           districtCountRef.current = featuresWithIds.length
           // Store features for retrieval when saving regions
           districtFeaturesRef.current = featuresWithIds
-          console.log('Districts setup complete, count:', featuresWithIds.length)
-          
           // Apply region colors only for regions belonging to THIS state
           // Note: We don't apply old selections here because feature IDs are reused per state
           for (let featureId = 0; featureId < featuresWithIds.length; featureId++) {
@@ -493,8 +490,6 @@ export const MapboxVisualization = ({
 
     // Helper: Handle state click
     const handleStateClick = (stateName: string) => {
-      console.log('State clicked:', stateName)
-      
       selectedStateRef.current = stateName
       zoomToState(stateName)
       loadStateDistricts(stateName)
@@ -523,8 +518,6 @@ export const MapboxVisualization = ({
       fetch(INDIA_STATES_URL)
         .then(res => res.json())
         .then((data: FeatureCollection) => {
-          console.log('States loaded:', data.features.length)
-          
           statesDataRef.current = data
           
           const featuresWithIds = data.features.map((f: Feature, i: number) => ({
@@ -544,10 +537,10 @@ export const MapboxVisualization = ({
             type: 'line',
             source: 'india-states',
             paint: {
-              'line-color': '#ff6b6b',
-              'line-width': 8,
-              'line-opacity': 0.3,
-              'line-blur': 4,
+              'line-color': '#ffffff',
+              'line-width': 2,
+              'line-opacity': 0.8,
+              'line-blur': 1,
             },
           })
 
@@ -557,9 +550,9 @@ export const MapboxVisualization = ({
             type: 'line',
             source: 'india-states',
             paint: {
-              'line-color': '#ff4757',
-              'line-width': 3,
-              'line-opacity': 0.9,
+              'line-color': '#ffffff',
+              'line-width': 2,
+              'line-opacity': 0.2,
             },
           })
 
@@ -585,7 +578,7 @@ export const MapboxVisualization = ({
             type: 'line',
             source: 'india-states',
             paint: {
-              'line-color': '#8BC462',
+              'line-color': '#ffffff',
               'line-width': 2,
               'line-opacity': 0.9,
             },
