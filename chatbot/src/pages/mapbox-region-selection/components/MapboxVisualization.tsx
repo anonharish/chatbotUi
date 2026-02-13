@@ -6,6 +6,8 @@ import { getStateDistrictsCdnUrl } from '../../region-selection/constants'
 import * as turf from '@turf/turf'
 import type { Region } from '../types'
 import { createDistrictKey } from '../types'
+import { FIELD_OFFICERS, officersToGeoJSON } from '../fieldOfficerData'
+import { getOfficerPopupHTML } from './OfficerPopup'
 
 // India center coordinates
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937]
@@ -591,6 +593,72 @@ export const MapboxVisualization = ({
 
           console.log('State layers added')
         })
+
+      // === FIELD OFFICER CLUSTERS ===
+      // Add clustered GeoJSON source with mock officer data
+      map.addSource('field-officers', {
+        type: 'geojson',
+        data: officersToGeoJSON(FIELD_OFFICERS),
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      })
+
+      // Cluster circles — sized and colored by point_count
+      map.addLayer({
+        id: 'officer-clusters',
+        type: 'circle',
+        source: 'field-officers',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step', ['get', 'point_count'],
+            '#51bbd6',   // teal  < 5
+            5, '#f1f075', // yellow 5–15
+            15, '#f28cb1' // pink  15+
+          ],
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            14,          // < 5 (was 18)
+            5, 18,       // 5–15 (was 24)
+            15, 20       // 15+ (was 32)
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': 'rgba(255,255,255,0.6)',
+        },
+      })
+
+      // Cluster count label
+      map.addLayer({
+        id: 'officer-cluster-count',
+        type: 'symbol',
+        source: 'field-officers',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Open Sans Bold'],
+          'text-size': 12, // Reduced from 13
+        },
+        paint: {
+          'text-color': '#1e293b',
+        },
+      })
+
+      // Individual (unclustered) officer pins
+      map.addLayer({
+        id: 'officer-unclustered',
+        type: 'circle',
+        source: 'field-officers',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#22c55e',
+          'circle-radius': 8,
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#ffffff',
+        },
+      })
+
+      console.log('Field officer cluster layers added')
     })
 
     // === STATE HOVER HANDLERS ===
@@ -731,6 +799,61 @@ export const MapboxVisualization = ({
       }
     })
 
+    // === FIELD OFFICER CLUSTER HANDLERS ===
+    // Click cluster → zoom to expand
+    map.on('click', 'officer-clusters', async (e) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: ['officer-clusters'] })
+      if (!features.length) return
+      const clusterId = features[0].properties?.cluster_id
+      const source = map.getSource('field-officers') as maplibregl.GeoJSONSource
+      if (!source || clusterId === undefined) return
+
+      try {
+        const zoom = await source.getClusterExpansionZoom(clusterId)
+        const geometry = features[0].geometry
+        if (geometry.type === 'Point') {
+          map.flyTo({
+            center: geometry.coordinates as [number, number],
+            zoom: zoom,
+            duration: 800,
+          })
+        }
+      } catch (err) {
+        console.error('Error expanding cluster:', err)
+      }
+    })
+
+    // Click individual officer → show popup
+    map.on('click', 'officer-unclustered', (e) => {
+      if (!e.features || !e.features.length) return
+      const feature = e.features[0]
+      const coords = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number]
+      const props = feature.properties || {}
+
+      new maplibregl.Popup({
+        offset: 15,
+        className: 'officer-popup',
+        maxWidth: '280px',
+      })
+        .setLngLat(coords)
+        .setHTML(getOfficerPopupHTML(props as Record<string, string>))
+        .addTo(map)
+    })
+
+    // Cursor changes on hover
+    map.on('mouseenter', 'officer-clusters', () => {
+      map.getCanvas().style.cursor = 'pointer'
+    })
+    map.on('mouseleave', 'officer-clusters', () => {
+      map.getCanvas().style.cursor = ''
+    })
+    map.on('mouseenter', 'officer-unclustered', () => {
+      map.getCanvas().style.cursor = 'pointer'
+    })
+    map.on('mouseleave', 'officer-unclustered', () => {
+      map.getCanvas().style.cursor = ''
+    })
+
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     mapRef.current = map
 
@@ -742,8 +865,8 @@ export const MapboxVisualization = ({
 
   return (
     <div className="relative w-full h-full">
-      <div 
-        ref={mapContainer} 
+      <div
+        ref={mapContainer}
         className="w-full h-full"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
