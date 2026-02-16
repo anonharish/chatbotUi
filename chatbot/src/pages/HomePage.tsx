@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Chatbot } from "@/components/chatbot";
+import { Chatbot } from "@/features/chatbot";
 
 export default function HomePage() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
