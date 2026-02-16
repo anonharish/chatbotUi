@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/layouts/RootLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import DashboardPage from '@/pages/DashboardPage'
 
 
 
@@ -63,6 +64,11 @@ export const router = createBrowserRouter([
     path: '*',
     element: <Navigate to="/404" replace />,
   },
+  {
+  path: "/dashboard",
+  element: <DashboardPage />,
+}
+
 ])
 
 export default router

@@ -1,0 +1,246 @@
+import GlassCard from "@/components/ui/GlassCard";
+import Gauge from "@/components/ui/Gauge";
+import CapsuleBar from "@/components/ui/CapsuleBar";
+import OutlineCapsuleBar from "@/components/ui/OutlineCapsuleBar";
+
+import {
+LineChart,
+Line,
+BarChart,
+Bar,
+XAxis,
+YAxis,
+CartesianGrid,
+ResponsiveContainer,
+} from "recharts";
+
+const lineData = [
+{ m: "Jan", v: 200 },
+{ m: "Feb", v: 260 },
+{ m: "Mar", v: 210 },
+{ m: "Apr", v: 340 },
+{ m: "May", v: 240 },
+{ m: "Jun", v: 290 },
+{ m: "Jul", v: 250 },
+];
+
+const barData = [
+{ n: "R.O.", v: 120 },
+{ n: "I.O.", v: 140 },
+{ n: "F.O.", v: 320 },
+{ n: "Agents", v: 450 },
+];
+
+const compareData = [
+{ m: "Jan", a: 25, b: 40 },
+{ m: "Feb", a: 55, b: 38 },
+{ m: "Mar", a: 40, b: 60 },
+{ m: "Apr", a: 28, b: 40 },
+{ m: "May", a: 30, b: 38 },
+];
+
+export default function DashboardPage() {
+return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover">
+
+
+  {/* ===== TOP ROW ===== */}
+  <div className="grid grid-cols-3 gap-8">
+
+    {/* Line + Gauge */}
+    <GlassCard className="col-span-2 h-[360px] flex">
+
+      {/* Line chart */}
+      <div className="w-1/2">
+        <h3 className="mb-4 text-white">
+          Agents Onboarding Velocity
+        </h3>
+
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={lineData}>
+
+            <CartesianGrid
+              stroke="white"
+              strokeOpacity={0.18}
+              strokeDasharray="2 8"
+              vertical={false}
+            />
+
+            <YAxis
+              domain={[0, 500]}
+              ticks={[0, 100, 200, 300, 400, 500]}
+              tick={{ fill: "white" }}
+              axisLine={false}
+              tickLine={false}
+            />
+
+            <XAxis
+              dataKey="m"
+              tick={{ fill: "white" }}
+              axisLine={false}
+              tickLine={false}
+            />
+
+            <Line
+              type="monotone"
+              dataKey="v"
+              stroke="white"
+              dot={{ r: 5 }}
+            />
+
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Gauge */}
+      <div className="w-1/2 flex items-center justify-center">
+        <Gauge value={78} />
+      </div>
+
+    </GlassCard>
+
+    {/* Workforce */}
+    <GlassCard className="h-[360px]">
+      <h3 className="mb-4 text-white">
+        Workforce Structure
+      </h3>
+
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={barData}>
+
+          <CartesianGrid
+            stroke="white"
+            strokeOpacity={0.18}
+            strokeDasharray="2 8"
+            vertical={false}
+          />
+
+          <YAxis
+            domain={[0, 500]}
+            ticks={[0, 100, 200, 300, 400, 500]}
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <XAxis
+            dataKey="n"
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <Bar
+            dataKey="v"
+            fill="white"
+            shape={<CapsuleBar />}
+            barSize={40}
+          />
+
+        </BarChart>
+      </ResponsiveContainer>
+    </GlassCard>
+
+  </div>
+
+  {/* ===== BOTTOM ROW ===== */}
+  <div className="grid grid-cols-3 gap-8 mt-8">
+
+    {/* Region velocity */}
+    <GlassCard className="h-[340px]">
+      <h3 className="mb-4 text-white">
+        Region Creation Velocity
+      </h3>
+
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={lineData}>
+
+          <CartesianGrid
+            stroke="white"
+            strokeOpacity={0.18}
+            strokeDasharray="2 8"
+            vertical={false}
+          />
+
+          <YAxis
+            domain={[0, 500]}
+            ticks={[0, 100, 200, 300, 400, 500]}
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <XAxis
+            dataKey="m"
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke="white"
+          />
+
+        </LineChart>
+      </ResponsiveContainer>
+    </GlassCard>
+
+    {/* Compare */}
+    <GlassCard className="col-span-2 h-[340px]">
+      <h3 className="mb-4 text-white">
+        Regional Creation Target vs Actual
+      </h3>
+
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={compareData}
+          barGap={12}
+          barCategoryGap="30%"
+        >
+
+          <CartesianGrid
+            stroke="white"
+            strokeOpacity={0.18}
+            strokeDasharray="2 8"
+            vertical={false}
+          />
+
+          <YAxis
+            domain={[0, 100]}
+            ticks={[0, 20, 40, 60, 80, 100]}
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <XAxis
+            dataKey="m"
+            tick={{ fill: "white" }}
+            axisLine={false}
+            tickLine={false}
+          />
+
+          <Bar
+            dataKey="a"
+            shape={<OutlineCapsuleBar />}
+            barSize={40}
+          />
+
+          <Bar
+            dataKey="b"
+            fill="white"
+            shape={<CapsuleBar />}
+            barSize={40}
+          />
+
+        </BarChart>
+      </ResponsiveContainer>
+    </GlassCard>
+
+  </div>
+
+</div>
+
+);
+}
