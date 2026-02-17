@@ -33,31 +33,31 @@
 
 // );
 // }
- import React from "react";
- import PillDropdownButton from "../ui/PillDropdownButton";
+import React from "react";
+import PillDropdownButton from "../ui/PillDropdownButton";
 
 export default function GlassCutCard() {
-   return (
-<div className="relative w-full min-h-screen flex justify-center items-center overflow-hidden">
+  return (
+    <div className="relative w-full h-screen flex justify-center items-center">
 
-       {/* Background */}
-      <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
+      {/* Background */}
+  <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
 
-       {/* Glass Card Wrapper */}
-       <div className="relative w-[1304px] h-[634px]">
+      {/* Glass Card Wrapper */}
+      <div className="relative w-[1304px] h-[634px]">
 
-       {/* SVG Masked Glass Card */}
-       <svg
-         width="1304"
+         {/* SVG Masked Glass Card */}
+        <svg
+          width="1304"
           height="634"
-                     viewBox="0 0 1304 634"
-           className="absolute inset-0"
-         >
+          viewBox="0 0 1304 634"
+          className="absolute inset-0"
+        >
           <defs>
             {/* Glass blur filter */}
-             <filter id="glassBlur">
-               <feGaussianBlur stdDeviation="18" />
-             </filter>
+            <filter id="glassBlur">
+              <feGaussianBlur stdDeviation="18" />
+            </filter>
 
              {/* Main merged shape path */}
              <clipPath id="cardShape">
@@ -76,26 +76,26 @@ export default function GlassCutCard() {
                    Q1304 634 1258 634
                    H46
                    Q0 634 0 588
-                   V46xs 
+                   V46
                    Q0 0 46 0
                    Z
                  "
                />
              </clipPath>
-          </defs>
+           </defs>
 
-          {/* Glass fill */}
-           <foreignObject
-             width="100%"
-             height="100%" 
-             clipPath="url(#cardShape)"
-           >
-                         <div className="w-full h-full bg-white/20 backdrop-blur-xl border border-white/20 rounded-[46px]" />
-         </foreignObject>
-          {/* Border stroke */}
-           <path
-             d="
-               M46 0
+         {/* Glass fill */}
+          <foreignObject
+            width="100%"
+            height="100%"
+            clipPath="url(#cardShape)"
+          >
+            <div className="w-full h-full bg-white/20 backdrop-blur-xl border border-white/20 rounded-[46px]" />
+          </foreignObject>
+           {/* Border stroke */}
+          <path
+            d="
+              M46 0
               H362
               Q408 0 408 46
               Q408 93 454 93
@@ -118,19 +118,20 @@ export default function GlassCutCard() {
           />
         </svg>
 
-{/*Dropdown Pills */}
+        {/* Dropdown Pills */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-6 z-10">
-           <PillDropdownButton
-             label="ANDHRA PRADESH"
-             options={["Telangana", "Karnataka", "Tamil Nadu"]}
-           /> 
-           <PillDropdownButton
-             label="VIZAG ZONE"
-             options={["Zone 1", "Zone 2", "Zone 3"]}
+          <PillDropdownButton
+            label="ANDHRA PRADESH"
+            options={["Telangana", "Karnataka", "Tamil Nadu"]}
           />
-        </div>
 
-      </div>
-    </div>
-  );
-}
+          <PillDropdownButton
+            label="VIZAG ZONE"
+            options={["Zone 1", "Zone 2", "Zone 3"]}
+          />
+         </div>
+
+       </div>
+     </div>
+   );
+ }
