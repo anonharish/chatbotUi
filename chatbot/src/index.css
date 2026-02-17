@@ -91,6 +91,25 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+
+.name-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0;
+  color: #6B7280;
+}
+
+.role-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0;
+  color: #9CA3AF; 
+}
+
 /* Leaflet District Tooltip Styling */
 .district-tooltip {
   background-color: hsl(var(--card));
