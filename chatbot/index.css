@@ -1,0 +1,16 @@
+.notch-card {
+  border-radius: 32px;
+
+  /* Top center curved notch */
+  -webkit-mask:
+    radial-gradient(120px 70px at 50% 0,
+      transparent 99%,
+      black 100%) top/100% 140px no-repeat,
+    linear-gradient(black, black);
+
+  mask:
+    radial-gradient(120px 70px at 50% 0,
+      transparent 99%,
+      black 100%) top/100% 140px no-repeat,
+    linear-gradient(black, black);
+}
