@@ -2,16 +2,12 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/layouts/RootLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import DashboardPage from '@/pages/DashboardPage'
-
-
 
 // Lazy load pages for optimal bundle splitting
-const CardPreviewPage = lazy(() => import('@/pages/CardPreviewPage'))
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-
-
+const RegionSelectionPage = lazy(() => import('@/pages/region-selection'))
+const MapboxRegionSelectionPage = lazy(() => import('@/pages/mapbox-region-selection'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -41,13 +37,14 @@ export const router = createBrowserRouter([
         path: 'chat',
         element: withSuspense(HomePage),
       },
-
       {
-        path: 'card-preview',
-        element: withSuspense(CardPreviewPage),
+        path: 'region-selection',
+        element: withSuspense(RegionSelectionPage),
       },
-
-
+      {
+        path: 'mapbox-region-selection',
+        element: withSuspense(MapboxRegionSelectionPage),
+      },
       // Add more routes here as needed
       // Example:
       // {
@@ -64,11 +61,6 @@ export const router = createBrowserRouter([
     path: '*',
     element: <Navigate to="/404" replace />,
   },
-  {
-  path: "/dashboard",
-  element: <DashboardPage />,
-}
-
 ])
 
 export default router
