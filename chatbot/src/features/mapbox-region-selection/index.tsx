@@ -3,23 +3,23 @@ import { MapboxVisualization } from './components/MapboxVisualization'
 import type { Region, DistrictInfo } from './types'
 import { generateId, getNextColor, createDistrictKey, parseDistrictKey } from './types'
 
-const MapboxRegionSelectionPage = () => {
+export const MapboxRegionSelectionFeature = () => {
   // State management
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [regions, setRegions] = useState<Region[]>([])
   // Use string composite keys: "stateName_featureId"
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set())
   const [districtInfoMap, setDistrictInfoMap] = useState<Map<string, DistrictInfo>>(new Map())
-  
+
   // Form state
   const [regionName, setRegionName] = useState('')
   const [regionalOfficer, setRegionalOfficer] = useState('')
   const [intelligentOfficer, setIntelligentOfficer] = useState('')
-  
+
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
-  
+
   // Ref for getting district features from map (accepts numeric feature IDs)
   const getDistrictFeaturesRef = useRef<((ids: Set<number>) => GeoJSON.Feature[]) | null>(null)
 
@@ -46,7 +46,7 @@ const MapboxRegionSelectionPage = () => {
   const handleDistrictClick = useCallback((districtId: number, districtName: string, stateName: string) => {
     // Create composite key for unique identification
     const districtKey = createDistrictKey(stateName, districtId)
-    
+
     // Check if already in a region
     if (districtToRegion.has(districtKey)) {
       return
@@ -101,7 +101,7 @@ const MapboxRegionSelectionPage = () => {
       }
     })
     const geometry = getDistrictFeaturesRef.current?.(featureIds) || []
-    
+
     const newRegion: Region = {
       id: generateId(),
       name: regionName.trim(),
@@ -140,9 +140,9 @@ const MapboxRegionSelectionPage = () => {
   }, [])
 
   return (
-    <div 
+    <div
       className="relative h-[calc(100vh-3.5rem)] w-full overflow-hidden"
-      style={{ 
+      style={{
         backgroundColor: '#0f172a',
         backgroundImage: `
           radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.03) 0%, transparent 50%),
@@ -160,15 +160,15 @@ const MapboxRegionSelectionPage = () => {
       }}
     >
       {/* Globe glow effect */}
-      <div 
+      <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: 'radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.15) 0%, rgba(56, 189, 248, 0.05) 30%, transparent 60%)',
         }}
       />
-      
+
       {/* Map Visualization */}
-      <MapboxVisualization 
+      <MapboxVisualization
         onStateClick={handleStateClick}
         onDistrictClick={handleDistrictClick}
         onDistrictHover={setHoveredDistrict}
@@ -181,7 +181,7 @@ const MapboxRegionSelectionPage = () => {
       {/* Top Left - Location Breadcrumb */}
       <div className="absolute top-4 left-4 z-[1000]">
         <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md p-2 rounded-full border border-white/10 text-white">
-          <div 
+          <div
             className="flex items-center gap-2 cursor-pointer hover:bg-white/10 px-3 py-1 rounded-full transition-colors"
             onClick={handleBackToIndia}
           >
@@ -244,10 +244,9 @@ const MapboxRegionSelectionPage = () => {
       )}
 
       {/* Right Sidebar - Floating Panel */}
-      <div 
-        className={`absolute top-4 bottom-4 right-4 w-96 z-[1000] transition-all duration-500 ease-out ${
-          sidebarOpen ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
-        }`}
+      <div
+        className={`absolute top-4 bottom-4 right-4 w-96 z-[1000] transition-all duration-500 ease-out ${sidebarOpen ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
+          }`}
       >
         <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl h-full flex flex-col overflow-hidden">
           {/* Panel Header */}
@@ -262,7 +261,7 @@ const MapboxRegionSelectionPage = () => {
                 </div>
                 Region Manager
               </h1>
-              <button 
+              <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
               >
@@ -305,7 +304,7 @@ const MapboxRegionSelectionPage = () => {
                     <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
                     New Region
                   </h3>
-                  
+
                   <div className="space-y-3">
                     <input
                       type="text"
@@ -334,8 +333,8 @@ const MapboxRegionSelectionPage = () => {
                   {selectedDistrictsData.length > 0 && (
                     <div className="flex flex-wrap gap-2 p-3 bg-white/5 rounded-xl">
                       {selectedDistrictsData.slice(0, 5).map((d) => (
-                        <span 
-                          key={d.id} 
+                        <span
+                          key={d.id}
                           className="px-3 py-1 text-xs bg-purple-500/30 text-purple-200 rounded-full cursor-pointer hover:bg-red-500/30 transition-colors"
                           onClick={() => removeFromSelection(d.id)}
                         >
@@ -381,7 +380,7 @@ const MapboxRegionSelectionPage = () => {
                     </h3>
                     <div className="space-y-2">
                       {regions.map((region) => (
-                        <div 
+                        <div
                           key={region.id}
                           className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
                         >
@@ -436,4 +435,4 @@ const MapboxRegionSelectionPage = () => {
   )
 }
 
-export default MapboxRegionSelectionPage
+

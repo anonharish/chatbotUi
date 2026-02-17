@@ -7,7 +7,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const ChatbotPage = lazy(() => import('@/pages/chatbot/ChatbotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const RegionSelectionPage = lazy(() => import('@/pages/region-selection'))
-const MapboxRegionSelectionPage = lazy(() => import('@/pages/mapbox-region-selection'))
+const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: withSuspense(ChatbotPage),
+        element: withSuspense(MapboxPage),
       },
       {
         path: 'chat',
@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'mapbox-region-selection',
-        element: withSuspense(MapboxRegionSelectionPage),
+        element: withSuspense(MapboxPage),
       },
       // Add more routes here as needed
       // Example:

@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { FeatureCollection, Feature, Polygon, MultiPolygon } from 'geojson'
-import { getStateDistrictsCdnUrl } from '../../region-selection/constants'
+import { getStateDistrictsCdnUrl } from '@/pages/region-selection/constants'
 import * as turf from '@turf/turf'
 import type { Region } from '../types'
 import { createDistrictKey } from '../types'
-import { FIELD_OFFICERS, officersToGeoJSON } from '../fieldOfficerData'
+import { FIELD_OFFICERS, officersToGeoJSON } from '../data'
 import { getOfficerPopupHTML } from './OfficerPopup'
 
 // India center coordinates
@@ -69,7 +69,7 @@ export const MapboxVisualization = ({
   const districtCountRef = useRef<number>(0)
   // Store district features for retrieval
   const districtFeaturesRef = useRef<Feature[]>([])
-  
+
   // Tooltip state
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
@@ -77,7 +77,7 @@ export const MapboxVisualization = ({
     y: 0,
     text: ''
   })
-  
+
   // Store callbacks in refs to avoid useEffect re-runs
   const onStateClickRef = useRef(onStateClick)
   const onStateHoverRef = useRef(onStateHover)
@@ -85,8 +85,8 @@ export const MapboxVisualization = ({
   const onDistrictHoverRef = useRef(onDistrictHover)
   const regionsRef = useRef(regions)
   const currentSelectionRef = useRef(currentSelection)
-  
-  
+
+
   // Update refs when props change
   useEffect(() => {
     onStateClickRef.current = onStateClick
@@ -112,23 +112,23 @@ export const MapboxVisualization = ({
     const map = mapRef.current
     if (!map || !districtsLoadedRef.current) return
     if (!map.getSource('state-districts')) return
-    
+
     const count = districtCountRef.current
     const currentState = selectedStateRef.current
-    
+
     for (let featureId = 0; featureId < count; featureId++) {
       // Create composite key for this featureId
       const districtKey = currentState ? createDistrictKey(currentState, featureId) : null
-      
+
       // Only apply region color if it's for the current state
-      const region = regions.find(r => 
+      const region = regions.find(r =>
         r.state === currentState && r.districtIds.has(districtKey || '')
       )
       const isSelected = districtKey ? currentSelection.has(districtKey) : false
-      
+
       map.setFeatureState(
         { source: 'state-districts', id: featureId },
-        { 
+        {
           regionColor: region?.color || null,
           selected: isSelected
         }
@@ -140,7 +140,7 @@ export const MapboxVisualization = ({
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    
+
     // Wait for map to be ready
     if (!map.isStyleLoaded()) {
       const checkStyle = () => {
@@ -151,13 +151,13 @@ export const MapboxVisualization = ({
       map.once('styledata', checkStyle)
       return
     }
-    
+
     updateAllRegionsLayer()
-    
+
     function updateAllRegionsLayer() {
       // Collect all features from all regions with geometry
       const allFeatures: GeoJSON.Feature[] = []
-      
+
       regions.forEach((region) => {
         if (region.geometry) {
           region.geometry.forEach(feature => {
@@ -178,16 +178,16 @@ export const MapboxVisualization = ({
           })
         }
       })
-      
+
       const featureCollection: FeatureCollection = {
         type: 'FeatureCollection',
         features: allFeatures
       }
-      
+
       // Update or create the source
       if (!map) return
       const existingSource = map.getSource('all-regions') as maplibregl.GeoJSONSource
-      
+
       if (existingSource) {
         existingSource.setData(featureCollection)
       } else if (allFeatures.length > 0) {
@@ -196,7 +196,7 @@ export const MapboxVisualization = ({
           type: 'geojson',
           data: featureCollection
         })
-        
+
         // Add fill layer for persistent regions
         map.addLayer({
           id: 'all-regions-fill',
@@ -212,7 +212,7 @@ export const MapboxVisualization = ({
             ]
           }
         }, 'india-state-fill') // Insert below state fill layer
-        
+
         // Add border layer for persistent regions
         map.addLayer({
           id: 'all-regions-border',
@@ -224,12 +224,12 @@ export const MapboxVisualization = ({
             'line-opacity': 0.9
           }
         }, 'india-state-fill')
-        
+
         // Add hover handlers for all-regions layer
         map.on('mouseenter', 'all-regions-fill', () => {
           map.getCanvas().style.cursor = 'pointer'
         })
-        
+
         map.on('mouseleave', 'all-regions-fill', () => {
           map.getCanvas().style.cursor = ''
           // Clear hover state for all features
@@ -244,18 +244,18 @@ export const MapboxVisualization = ({
           })
           setTooltip(prev => ({ ...prev, visible: false }))
         })
-        
+
         map.on('mousemove', 'all-regions-fill', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features[0]
             const featureId = feature.id as number
-            
+
             // Set hover state
             map.setFeatureState(
               { source: 'all-regions', id: featureId },
               { hover: true }
             )
-            
+
             // Show region tooltip
             const props = feature.properties
             setTooltip({
@@ -351,7 +351,7 @@ export const MapboxVisualization = ({
       }
 
       const bbox = turf.bbox(stateFeature as Feature<Polygon | MultiPolygon>)
-      
+
       map.fitBounds(
         [[bbox[0], bbox[1]], [bbox[2], bbox[3]]] as maplibregl.LngLatBoundsLike,
         {
@@ -444,7 +444,7 @@ export const MapboxVisualization = ({
               'line-opacity': 0.9,
             },
           })
-          
+
           // Region fill layer - for saved regions (rendered on top)
           map.addLayer({
             id: 'region-fill',
@@ -470,14 +470,14 @@ export const MapboxVisualization = ({
           for (let featureId = 0; featureId < featuresWithIds.length; featureId++) {
             // Create composite key and check if region contains this district
             const districtKey = createDistrictKey(stateName, featureId)
-            const region = regionsRef.current.find(r => 
+            const region = regionsRef.current.find(r =>
               r.state === stateName && r.districtIds.has(districtKey)
             )
-            
+
             if (region) {
               map.setFeatureState(
                 { source: 'state-districts', id: featureId },
-                { 
+                {
                   regionColor: region.color,
                   selected: false
                 }
@@ -504,7 +504,7 @@ export const MapboxVisualization = ({
 
     map.on('load', () => {
       map.setProjection({ type: 'globe' })
-      
+
       map.setSky({
         'sky-color': '#0b0b19',
         'sky-horizon-blend': 0.4,
@@ -519,12 +519,12 @@ export const MapboxVisualization = ({
         .then(res => res.json())
         .then((data: FeatureCollection) => {
           statesDataRef.current = data
-          
+
           const featuresWithIds = data.features.map((f: Feature, i: number) => ({
             ...f,
             id: i
           }))
-          
+
           map.addSource('india-states', {
             type: 'geojson',
             data: { type: 'FeatureCollection', features: featuresWithIds },
@@ -675,20 +675,20 @@ export const MapboxVisualization = ({
       if (e.features && e.features.length > 0) {
         const feature = e.features[0]
         const featureId = feature.id as number
-        
+
         if (hoveredStateIdRef.current !== null && hoveredStateIdRef.current !== featureId) {
           map.setFeatureState(
             { source: 'india-states', id: hoveredStateIdRef.current },
             { hover: false }
           )
         }
-        
+
         hoveredStateIdRef.current = featureId
         map.setFeatureState(
           { source: 'india-states', id: featureId },
           { hover: true }
         )
-        
+
         const stateName = feature.properties?.ST_NM
         if (stateName) onStateHoverRef.current?.(stateName)
       }
@@ -701,7 +701,7 @@ export const MapboxVisualization = ({
         districtClickedRef.current = false
         return
       }
-      
+
       // Check if clicking on a district (district layer takes priority)
       if (map.getLayer('district-fill')) {
         const districtFeatures = map.queryRenderedFeatures(e.point, { layers: ['district-fill'] })
@@ -710,7 +710,7 @@ export const MapboxVisualization = ({
           return
         }
       }
-      
+
       if (e.features && e.features.length > 0) {
         const stateName = e.features[0].properties?.ST_NM
         if (stateName) {
@@ -741,27 +741,27 @@ export const MapboxVisualization = ({
       if (e.features && e.features.length > 0) {
         const feature = e.features[0]
         const featureId = feature.id as number
-        
+
         if (hoveredDistrictIdRef.current !== null && hoveredDistrictIdRef.current !== featureId) {
           map.setFeatureState(
             { source: 'state-districts', id: hoveredDistrictIdRef.current },
             { hover: false }
           )
         }
-        
+
         hoveredDistrictIdRef.current = featureId
         map.setFeatureState(
           { source: 'state-districts', id: featureId },
           { hover: true }
         )
-        
+
         // Get district name (try different property names)
-        const districtName = feature.properties?.district || 
-                            feature.properties?.DISTRICT || 
-                            feature.properties?.name ||
-                            feature.properties?.NAME ||
-                            'Unknown District'
-        
+        const districtName = feature.properties?.district ||
+          feature.properties?.DISTRICT ||
+          feature.properties?.name ||
+          feature.properties?.NAME ||
+          'Unknown District'
+
         // Show tooltip at cursor position
         setTooltip({
           visible: true,
@@ -769,7 +769,7 @@ export const MapboxVisualization = ({
           y: e.originalEvent.clientY,
           text: districtName
         })
-        
+
         onDistrictHoverRef.current?.(districtName)
       }
     })
@@ -778,16 +778,16 @@ export const MapboxVisualization = ({
     map.on('click', 'district-fill', (e) => {
       // Set flag to prevent state click handler from firing
       districtClickedRef.current = true
-      
+
       if (e.features && e.features.length > 0) {
         const feature = e.features[0]
         const featureId = feature.id as number
-        const districtName = feature.properties?.district || 
-                            feature.properties?.DISTRICT || 
-                            feature.properties?.name ||
-                            feature.properties?.NAME ||
-                            'Unknown District'
-        
+        const districtName = feature.properties?.district ||
+          feature.properties?.DISTRICT ||
+          feature.properties?.name ||
+          feature.properties?.NAME ||
+          'Unknown District'
+
         handleDistrictClick(featureId, districtName)
       }
     })
@@ -863,7 +863,7 @@ export const MapboxVisualization = ({
         className="w-full h-full"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
-      
+
       {/* Shadcn-style tooltip */}
       {tooltip.visible && (
         <div
