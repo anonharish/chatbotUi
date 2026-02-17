@@ -6,7 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 // Lazy load pages for optimal bundle splitting
 const ChatbotPage = lazy(() => import('@/pages/chatbot/ChatbotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-const RegionSelectionPage = lazy(() => import('@/pages/region-selection'))
+const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSelectionPage'))
 const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 
 // Loading fallback component

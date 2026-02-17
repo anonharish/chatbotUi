@@ -1,5 +1,5 @@
-import type { Region, DistrictData } from './types'
-import { darkenColor } from './constants'
+import type { Region, DistrictData } from '../types'
+import { darkenColor } from '../constants'
 
 interface RegionFormProps {
   selectedDistricts: DistrictData[]

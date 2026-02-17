@@ -7,7 +7,7 @@ export default function RootLayout() {
   const navigate = useNavigate()
   
   // Check if we're on the region-selection page (fullscreen mode)
-  const isFullscreenPage = location.pathname === '/region-selection' || location.pathname === '/mapbox-region-selection'
+  const isFullscreenPage = location.pathname === '/region-selection' || location.pathname === '/mapbox-region-selection' || location.pathname === '/'
   
   return (
     <div className="min-h-screen bg-background text-foreground">
