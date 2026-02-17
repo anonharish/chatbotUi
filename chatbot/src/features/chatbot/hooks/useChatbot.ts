@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { USE_MOCK_DATA, MOCK_INITIAL_RESPONSE, getMockResponse } from "@/constants/ChatbotData";
+import { USE_MOCK_DATA, MOCK_INITIAL_RESPONSE, getMockResponse } from "../data";
 import { CHATBOT_API_ENDPOINTS } from "@/config/api";
 
 declare global {
