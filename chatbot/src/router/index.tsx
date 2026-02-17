@@ -1,15 +1,17 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
-import RootLayout from '@/layouts/RootLayout'
+import AppLayout from '@/layouts/AppLayout'
+import MainLayout from '@/layouts/MainLayout'
+import AuthLayout from '@/layouts/AuthLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import LoginPage from '@/pages/auth/LoginPage'
 
 // Lazy load pages for optimal bundle splitting
-const HomePage = lazy(() => import('@/pages/HomePage'))
+const ChatbotPage = lazy(() => import('@/pages/chatbot/ChatbotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
-const DirectoryPage = lazy(() => import('@/pages/DirectoryPage')) // ✅ ADDED
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
-
-
+const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSelectionPage'))
+const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
+const DummyPage = lazy(() => import('@/pages/DummyPage'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -27,31 +29,47 @@ const withSuspense = (Component: React.ComponentType) => (
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <RootLayout />,
+    element: <AppLayout />,
     errorElement: <ErrorBoundary />,
     children: [
       {
-        index: true,
-        element: withSuspense(HomePage),
+        path: '/',
+        element: <Navigate to="/dashboard" replace />,
       },
       {
-        path: 'chat',
-        element: withSuspense(HomePage),
+        element: <AuthLayout />,
+        children: [
+          {
+            path: 'login',
+            element: <LoginPage />,
+          },
+        ],
       },
-
-      // ✅ NEW ROUTE
       {
-        path: 'directory',
-        element: withSuspense(DirectoryPage),
+        element: <MainLayout />,
+        children: [
+          {
+            path: 'dashboard',
+            element: withSuspense(MapboxPage),
+          },
+          {
+            path: 'region-selection',
+            element: withSuspense(RegionSelectionPage),
+          },
+          {
+            path: 'mapbox-region-selection',
+            element: withSuspense(MapboxPage),
+          },
+          {
+            path: 'dummy',
+            element: withSuspense(DummyPage),
+          },
+          {
+            path: 'chat',
+            element: withSuspense(ChatbotPage),
+          },
+        ],
       },
-
-     {
-  path: 'dashboard',
-  element: withSuspense(DashboardPage),
-}
-
-
     ],
   },
   {
