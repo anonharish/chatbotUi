@@ -4,7 +4,7 @@ import RootLayout from '@/layouts/RootLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Lazy load pages for optimal bundle splitting
-const HomePage = lazy(() => import('@/pages/HomePage'))
+const ChatbotPage = lazy(() => import('@/pages/chatbot/ChatbotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const RegionSelectionPage = lazy(() => import('@/pages/region-selection'))
 const MapboxRegionSelectionPage = lazy(() => import('@/pages/mapbox-region-selection'))
@@ -31,11 +31,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: withSuspense(HomePage),
+        element: withSuspense(ChatbotPage),
       },
       {
         path: 'chat',
-        element: withSuspense(HomePage),
+        element: withSuspense(ChatbotPage),
       },
       {
         path: 'region-selection',
