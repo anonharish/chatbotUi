@@ -39,7 +39,6 @@ export default function DirectoryColumn({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedItem, setEditedItem] = useState<Item | null>(null);
 
-  /* ================= EDIT ================= */
 
   const startEdit = (e: React.MouseEvent, item: Item, index: number) => {
     e.stopPropagation();
@@ -58,9 +57,7 @@ export default function DirectoryColumn({
     setEditedItem(null);
   };
 
-  /* =================================================
-     ROLES CARD (icons stay visible)
-  ================================================= */
+  
   if (variant === "roles") {
     return (
       <Card className={`${baseCardStyle} p-6`}>
@@ -68,14 +65,14 @@ export default function DirectoryColumn({
           {localData.map((item, i) => (
             <div key={i} className="relative space-y-3">
 
-              {/* ICONS ALWAYS VISIBLE */}
+          
               <div className="absolute top-0 right-0 flex gap-3">
                 <img
-                  src="/icons/edit.png"
+                  src="/src/assets/icons/edit.png"
                   className="w-4 h-4 cursor-pointer"
                   onClick={(e) => startEdit(e, item, i)}
                 />
-                <img src="/icons/view.png" className="w-4 h-4 cursor-pointer" />
+                <img src="/src/assets/icons/view.png" className="w-4 h-4 cursor-pointer" />
               </div>
 
               <img
@@ -122,10 +119,6 @@ export default function DirectoryColumn({
     );
   }
 
-  /* =================================================
-     OFFICERS + AGENTS
-     ⭐ icons hidden while editing
-  ================================================= */
   return (
     <Card className={`${baseCardStyle} p-5`}>
       {/* SEARCH */}
@@ -164,7 +157,6 @@ export default function DirectoryColumn({
               }`}
             >
 
-              {/* LEFT */}
               <div className="flex items-center gap-3 flex-1">
                 <img
                   src={item.image}
@@ -200,16 +192,15 @@ export default function DirectoryColumn({
                 )}
               </div>
 
-              {/* ⭐ ICONS HIDDEN DURING EDIT */}
               {editingIndex !== i && (
                 <div className="flex gap-3 ml-3">
                   <img
-                    src="/icons/edit.png"
+                    src="/src/assets/icons/edit.png"
                     className="w-4 h-4 cursor-pointer"
                     onClick={(e) => startEdit(e, item, i)}
                   />
                   <img
-                    src="/icons/view.png"
+                    src="/src/assets/icons/view.png"
                     className="w-4 h-4 cursor-pointer"
                   />
                 </div>

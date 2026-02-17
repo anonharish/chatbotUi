@@ -7,6 +7,9 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const DirectoryPage = lazy(() => import('@/pages/DirectoryPage')) // ✅ ADDED
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+
+
 
 // Loading fallback component
 const PageLoader = () => (
@@ -42,6 +45,13 @@ export const router = createBrowserRouter([
         path: 'directory',
         element: withSuspense(DirectoryPage),
       },
+
+     {
+  path: 'dashboard',
+  element: withSuspense(DashboardPage),
+}
+
+
     ],
   },
   {
