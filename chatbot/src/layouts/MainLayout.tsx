@@ -2,6 +2,7 @@ import { Outlet, Navigate, useNavigate } from 'react-router'
 import Logo from '@/assets/icons/GLC-logo.svg'
 import { useAuth } from '@/context/AuthContext'
 import { Map, LogOut } from 'lucide-react'
+import { Sidebar } from '@/components/navigation/Sidebar'
 import { Button } from '@/components/ui/button'
 
 export default function MainLayout() {
@@ -70,6 +71,7 @@ export default function MainLayout() {
                     </nav>
                 </div>
             </header>
+            <Sidebar />
 
             {/* Main content */}
             <main className="pt-14 w-full h-full">
