@@ -32,7 +32,7 @@ export default function MainLayout() {
             <header
                 className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white"
             >
-                <div className="container px-4 my-4 h-14 flex justify-between" >
+                <div className="w-full px-6 my-4 h-14 flex justify-between items-center" >
                     <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
                         <img src={Logo} alt="Logo" className="h-16 w-auto" />
                     </div>
