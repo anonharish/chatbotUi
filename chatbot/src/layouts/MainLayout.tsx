@@ -21,20 +21,27 @@ export default function MainLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            {/* Header - Glassmorphic for fullscreen pages */}
+        <div className="min-h-screen text-foreground relative">
+            {/* Global Background Image */}
+            <div
+                className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+                style={{
+                    backgroundImage: 'url("/background.jpg")',
+                    // Optional: Add a dark overlay to ensure text readability
+                    boxShadow: 'inset 0 0 0 2000px rgba(0, 0, 0, 0.3)'
+                }}
+            />
+
+            {/* Header - Transparent */}
             <header
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isFullscreenPage
-                    ? 'bg-black/30 backdrop-blur-md border-b border-white/10'
-                    : 'bg-background/95 backdrop-blur border-b border-border supports-backdrop-filter:bg-background/60'
-                    }`}
+                className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white"
             >
-                <div className={`flex h-14 items-center ${isFullscreenPage ? 'px-6' : 'container mx-auto px-4'}`}>
+                <div className="container mx-auto px-4 h-14 flex items-center">
                     <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center">
                             <span className="text-white text-sm font-bold">DA</span>
                         </div>
-                        <span className={`text-xl font-bold ${isFullscreenPage ? 'text-white' : ''}`}>
+                        <span className="text-xl font-bold text-white">
                             Demo App
                         </span>
                     </div>
@@ -52,7 +59,7 @@ export default function MainLayout() {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate('/dummy')}
-                            className={isFullscreenPage ? "text-white hover:bg-white/10" : ""}
+                            className="text-white hover:bg-white/10"
                         >
                             Test Page
                         </Button>
@@ -63,6 +70,7 @@ export default function MainLayout() {
                                 size="icon"
                                 onClick={() => navigate('/region-selection')}
                                 title="Open 3D Map"
+                                className="text-white hover:bg-white/10"
                             >
                                 <Map className="h-5 w-5" />
                             </Button>
@@ -72,7 +80,7 @@ export default function MainLayout() {
                             variant="ghost"
                             size="sm"
                             onClick={() => logout()}
-                            className={isFullscreenPage ? "text-white hover:bg-white/10" : ""}
+                            className="text-white hover:bg-white/10"
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Logout
@@ -81,11 +89,8 @@ export default function MainLayout() {
                 </div>
             </header>
 
-            {/* Main content - No padding for fullscreen pages */}
-            <main className={isFullscreenPage
-                ? 'pt-14' // Only add padding-top for fixed header
-                : 'container mx-auto px-4 py-6 pt-20'
-            }>
+            {/* Main content */}
+            <main className={`flex-1 ${isFullscreenPage ? 'pt-14' : 'container mx-auto px-4 py-6 pt-20'}`}>
                 <Outlet />
             </main>
         </div>
