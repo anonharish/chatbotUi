@@ -8,10 +8,6 @@ export default function MainLayout() {
     const location = useLocation()
     const navigate = useNavigate()
 
-    // Check if we're on the region-selection page (fullscreen mode)
-    // Note: Adjust paths as needed based on new router structure
-    const isFullscreenPage = location.pathname === '/region-selection' || location.pathname === '/mapbox-region-selection' || location.pathname === '/dummy'
-
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center">Loading...</div>
     }
@@ -36,7 +32,7 @@ export default function MainLayout() {
             <header
                 className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white"
             >
-                <div className="container mx-auto px-4 h-14 flex items-center">
+                <div className="container px-4 h-14 flex items-center">
                     <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center">
                             <span className="text-white text-sm font-bold">DA</span>
@@ -45,14 +41,6 @@ export default function MainLayout() {
                             Demo App
                         </span>
                     </div>
-
-                    {/* Breadcrumb for region-selection */}
-                    {isFullscreenPage && location.pathname !== '/dummy' && (
-                        <div className="ml-4 flex items-center text-sm text-white/60">
-                            <span className="mx-2">›</span>
-                            <span className="text-white/80">Region Selection</span>
-                        </div>
-                    )}
 
                     <nav className="ml-auto flex items-center space-x-2">
                         <Button
@@ -64,17 +52,15 @@ export default function MainLayout() {
                             Test Page
                         </Button>
 
-                        {!isFullscreenPage && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => navigate('/region-selection')}
-                                title="Open 3D Map"
-                                className="text-white hover:bg-white/10"
-                            >
-                                <Map className="h-5 w-5" />
-                            </Button>
-                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate('/region-selection')}
+                            title="Open 3D Map"
+                            className="text-white hover:bg-white/10"
+                        >
+                            <Map className="h-5 w-5" />
+                        </Button>
 
                         <Button
                             variant="ghost"
@@ -90,7 +76,7 @@ export default function MainLayout() {
             </header>
 
             {/* Main content */}
-            <main className={`flex-1 ${isFullscreenPage ? 'pt-14' : 'container mx-auto px-4 py-6 pt-20'}`}>
+            <main className="pt-14 w-full h-full">
                 <Outlet />
             </main>
         </div>
