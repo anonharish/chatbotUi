@@ -12,6 +12,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSelectionPage'))
 const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 const DummyPage = lazy(() => import('@/pages/DummyPage'))
+const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
           {
             path: 'chat',
             element: withSuspense(ChatbotPage),
+          },
+          {
+            path: 'design-system',
+            element: withSuspense(DesignSystemPage),
           },
         ],
       },

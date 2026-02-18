@@ -81,6 +81,47 @@
   --chart-5: 340 75% 55%;
 }
 
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-bg-soft: rgba(255, 255, 255, 0.08);
+
+    --glass-border-gradient: linear-gradient(
+      101.74deg,
+      rgba(255, 255, 255, 1) 7.64%,
+      rgba(255, 255, 255, 0.2) 90.31%
+    );
+
+    --glass-blur: 18px;
+  }
+}
+
+@layer components {
+  .glass-surface {
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--radius);
+  }
+
+  .glass-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--glass-border-gradient);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+
 * {
   border-color: hsl(var(--border));
 }
