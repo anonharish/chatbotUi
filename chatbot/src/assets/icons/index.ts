@@ -1,0 +1,8 @@
+export { default as GLCLogo } from './GLC-logo.svg'
+export { default as DashboardIcon } from './dashboard-icon.svg'
+export { default as MapIcon } from './map-icon.svg'
+export { default as SettingsIcon } from './settings-icon.svg'
+export { default as UserIcon } from './user-icon.svg'
+export { default as EditIcon } from './edit.png'
+export { default as SearchIcon } from './search.png'
+export { default as ViewIcon } from './view.png'
