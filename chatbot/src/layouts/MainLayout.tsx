@@ -1,11 +1,11 @@
-import { Outlet, Navigate, useLocation, useNavigate } from 'react-router'
+import { Outlet, Navigate, useNavigate } from 'react-router'
+import Logo from '@/assets/icons/GLC-logo.svg'
 import { useAuth } from '@/context/AuthContext'
 import { Map, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function MainLayout() {
     const { user, logout, isLoading } = useAuth()
-    const location = useLocation()
     const navigate = useNavigate()
 
     if (isLoading) {
@@ -32,15 +32,11 @@ export default function MainLayout() {
             <header
                 className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white"
             >
-                <div className="container px-4 h-14 flex items-center">
+                <div className="container px-4 my-4 h-14 flex justify-between" >
                     <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-green-500 flex items-center justify-center">
-                            <span className="text-white text-sm font-bold">DA</span>
-                        </div>
-                        <span className="text-xl font-bold text-white">
-                            Demo App
-                        </span>
+                        <img src={Logo} alt="Logo" className="h-16 w-auto" />
                     </div>
+
 
                     <nav className="ml-auto flex items-center space-x-2">
                         <Button
