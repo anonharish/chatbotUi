@@ -1,17 +1,23 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from '@/layouts/AppLayout'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import LoginPage from '@/pages/auth/LoginPage'
+import CardPreviewPage from '@/pages/CardPreviewPage'
+
 
 // Lazy load pages for optimal bundle splitting
+
 const ChatbotPage = lazy(() => import('@/pages/chatbot/ChatbotPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSelectionPage'))
 const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 const DummyPage = lazy(() => import('@/pages/DummyPage'))
+const DirectoryPage = lazy(() => import('@/features/RoleManager/DirectoryPage'))
+const DashboardPage = lazy(() => import('@/features/RoleManager/DashboardPage'))
+ 
 
 // Loading fallback component
 const PageLoader = () => (
@@ -36,6 +42,8 @@ export const router = createBrowserRouter([
         path: '/',
         element: <Navigate to="/dashboard" replace />,
       },
+  
+
       {
         element: <AuthLayout />,
         children: [
@@ -68,6 +76,23 @@ export const router = createBrowserRouter([
             path: 'chat',
             element: withSuspense(ChatbotPage),
           },
+          {
+            path: 'dashboardpage',
+            element: withSuspense(DashboardPage),
+
+          },
+           {
+        path: 'card-preview',
+        element: withSuspense(CardPreviewPage),
+      },
+      
+     {
+  path: "directory",
+  element: withSuspense(DirectoryPage),
+}
+
+
+
         ],
       },
     ],
@@ -82,4 +107,4 @@ export const router = createBrowserRouter([
   },
 ])
 
-export default router
+export default router;

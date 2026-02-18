@@ -15,7 +15,7 @@ const data = [
   { name: "Agents", value: 450 },
 ];
 
-export default function BarChartCard() {
+export default function BarChartCard({ data }: { data: any[] }) {
   return (
     <GlassCard className="w-[350px] h-[320px]">
       <h3 className="text-white mb-4">Workforce Structure</h3>
