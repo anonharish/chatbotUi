@@ -18,6 +18,7 @@ const DummyPage = lazy(() => import('@/pages/DummyPage'))
 const DirectoryPage = lazy(() => import('@/features/RoleManager/DirectoryPage'))
 const DashboardPage = lazy(() => import('@/features/RoleManager/DashboardPage'))
  
+const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -92,7 +93,10 @@ export const router = createBrowserRouter([
 }
 
 
-
+{
+            path: 'design-system',
+            element: withSuspense(DesignSystemPage),
+          },
         ],
       },
     ],
