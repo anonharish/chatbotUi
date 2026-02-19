@@ -1,14 +1,11 @@
-
 // import React from "react";
 // import PillDropdownButton from "../ui/PillDropdownButton";
-
 
 // export default function GlassCutCard() {
 // return ( <div >
 
 //   {/* Background */}
 //   <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
- 
 
 //  {/* Main Container with Smooth Curved Notch */}
 //  <div
@@ -38,19 +35,12 @@ import PillDropdownButton from "../ui/PillDropdownButton";
 
 export default function GlassCutCard() {
   return (
-    <div className="relative w-full h-screen flex justify-center items-center">
-
-      {/* Background */}
-  <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
-
-      {/* Glass Card Wrapper */}
-      <div className="relative w-[1304px] h-[634px]">
-
-         {/* SVG Masked Glass Card */}
+    <div className="relative w-full flex justify-center">
+      <div className="relative w-[1304px] h-[720px] mt-35">
         <svg
           width="1304"
-          height="634"
-          viewBox="0 0 1304 634"
+          height="720"
+          viewBox="0 0 1304 720"
           className="absolute inset-0"
         >
           <defs>
@@ -59,10 +49,10 @@ export default function GlassCutCard() {
               <feGaussianBlur stdDeviation="18" />
             </filter>
 
-             {/* Main merged shape path */}
-             <clipPath id="cardShape">
-               <path
-                 d="
+            {/* Main merged shape path */}
+            <clipPath id="cardShape">
+              <path
+                d="
                    M46 0
                    H362
                    Q408 0 408 46
@@ -80,19 +70,15 @@ export default function GlassCutCard() {
                    Q0 0 46 0
                    Z
                  "
-               />
-             </clipPath>
-           </defs>
+              />
+            </clipPath>
+          </defs>
 
-         {/* Glass fill */}
-          <foreignObject
-            width="100%"
-            height="100%"
-            clipPath="url(#cardShape)"
-          >
+          {/* Glass fill */}
+          <foreignObject width="100%" height="100%" clipPath="url(#cardShape)">
             <div className="w-full h-full bg-white/20 backdrop-blur-xl border border-white/20 rounded-[46px]" />
           </foreignObject>
-           {/* Border stroke */}
+          {/* Border stroke */}
           <path
             d="
               M46 0
@@ -104,10 +90,11 @@ export default function GlassCutCard() {
               Q896 0 942 0
               H1258
               Q1304 0 1304 46
-              V588
-              Q1304 634 1258 634
-              H46
-              Q0 634 0 588
+              V674
+ Q1304 720 1258 720
+H46
+Q0 720 0 674
+
               V46
               Q0 0 46 0
               Z
@@ -129,9 +116,8 @@ export default function GlassCutCard() {
             label="VIZAG ZONE"
             options={["Zone 1", "Zone 2", "Zone 3"]}
           />
-         </div>
-
-       </div>
-     </div>
-   );
- }
+        </div>
+      </div>
+    </div>
+  );
+}

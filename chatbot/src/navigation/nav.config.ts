@@ -15,12 +15,12 @@ export const navItems: INavItem[] = [
     {
         icon: DashboardIcon,
         label: 'Dashboard',
-        path: '/dashboard',
+        path: '/dashboardpage',
     },
     {
         icon: UserIcon,
         label: 'Agents',
-        path: '/agents', 
+        path: '/directory', 
     },
     {
         icon: MapIcon,

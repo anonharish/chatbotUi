@@ -40,14 +40,15 @@ const compareData = [
 ];
 
 export default function DashboardPage() {
-return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover">
+return ( <div className="min-h-screen pl-20 pr-12 pt-12 pb-12">
+
 
 
   {/* ===== TOP ROW ===== */}
   <div className="grid grid-cols-3 gap-8">
 
     {/* Line + Gauge */}
-    <GlassCard className="col-span-2 h-[360px] flex">
+    <GlassCard className="col-span-2 h-[370px] flex">
 
       {/* Line chart */}
       <div className="w-1/2">
@@ -55,7 +56,7 @@ return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover"
           Agents Onboarding Velocity
         </h3>
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="95%" height="90%">
           <LineChart data={lineData}>
 
             <CartesianGrid
@@ -99,12 +100,12 @@ return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover"
     </GlassCard>
 
     {/* Workforce */}
-    <GlassCard className="h-[360px]">
+    <GlassCard className="h-[370px]">
       <h3 className="mb-4 text-white">
         Workforce Structure
       </h3>
 
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="95%" height="90%">
         <BarChart data={barData}>
 
           <CartesianGrid
@@ -146,12 +147,12 @@ return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover"
   <div className="grid grid-cols-3 gap-8 mt-8">
 
     {/* Region velocity */}
-    <GlassCard className="h-[340px]">
+    <GlassCard className="h-[370px]">
       <h3 className="mb-4 text-white">
         Region Creation Velocity
       </h3>
 
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="95%" height="90%">
         <LineChart data={lineData}>
 
           <CartesianGrid
@@ -187,12 +188,12 @@ return ( <div className="min-h-screen p-12 bg-[url('/background.jpg')] bg-cover"
     </GlassCard>
 
     {/* Compare */}
-    <GlassCard className="col-span-2 h-[340px]">
+    <GlassCard className="col-span-2 h-[370px]">
       <h3 className="mb-4 text-white">
         Regional Creation Target vs Actual
       </h3>
 
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="95%" height="90%">
         <BarChart
           data={compareData}
           barGap={12}

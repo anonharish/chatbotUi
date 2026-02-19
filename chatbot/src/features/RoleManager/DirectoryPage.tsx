@@ -1,24 +1,40 @@
-import TopStatsSection from "./components/layout/TopStatsSection";
-import DirectorySection from "./components/directory/DirectorySection";
+import TopGraphsSection from "./components/layout/TopStatsSection";
+import GlassCutCard from "@/components/pages/GlassCutCard";
+import DirectoryCards from "@/components/DirectoryCards/DirectoryCards";
 
 export default function DirectoryPage() {
   return (
-    <div className="relative min-h-screen">
 
-      {/* Background */}
-      <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
-
-      <div className="relative z-10 px-10 pt-10 pb-20">
+      <div className="min-h-screen pl-20 pr-12 pt-12 pb-12">
 
         {/* TOP GRAPHS */}
-        <TopStatsSection />
+        <TopGraphsSection />
 
-        {/* DIRECTORY SECTION */}
-        <div className="mt-16">
-          <DirectorySection />
+        {/* USER DIRECTORY HEADING */}
+        <div className="mt-8">
+          <h2 className="text-white text-3xl font-semibold mt-10 ml-8">
+            User Directory
+          </h2>
+        </div>
+
+        {/* GLASS DIRECTORY SECTION */}
+<div className="relative flex justify-center items-start -mt-25">
+
+          <div className="relative w-[1304px]">
+
+            {/* Glass Background */}
+            <GlassCutCard />
+
+            {/* Directory Cards */}
+            <div className="absolute top-[260px] left-0 right-0 flex justify-center">
+              <DirectoryCards />
+            </div>
+
+          </div>
+
         </div>
 
       </div>
-    </div>
+
   );
 }
