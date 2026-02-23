@@ -1,7 +1,9 @@
-import DashboardIcon from '@/assets/icons/dashboard-icon.svg'
-import UserIcon from '@/assets/icons/user-icon.svg'
-import MapIcon from '@/assets/icons/map-icon.svg'
-import SettingsIcon from '@/assets/icons/settings-icon.svg'
+import {
+    DashboardIcon,
+    UserIcon,
+    MapIcon,
+    SettingsIcon
+} from '@/assets/icons'
 
 export interface INavItem {
     icon: string

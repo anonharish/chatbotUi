@@ -1,8 +1,8 @@
 import { Outlet, Navigate, useNavigate } from 'react-router'
-import Logo from '@/assets/icons/GLC-logo.svg'
+import { GLCLogo as Logo } from '@/assets/icons'
 import { useAuth } from '@/context/AuthContext'
 import { Map, LogOut } from 'lucide-react'
-import { Sidebar } from '@/components/navigation/Sidebar'
+import { Sidebar } from '@/navigation/Sidebar'
 import { Button } from '@/components/ui/button'
 
 export default function MainLayout() {
