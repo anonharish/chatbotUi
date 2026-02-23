@@ -14,6 +14,7 @@ import {
   getStateDistrictsCdnUrl,
 } from './constants'
 import { GlobeVisualization } from './components/GlobeVisualization' // Import the new component
+import './styles.css'
 
 // Types for state properties
 // interface StateProperties {
