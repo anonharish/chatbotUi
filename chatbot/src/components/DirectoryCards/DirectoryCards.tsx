@@ -90,7 +90,7 @@ export default function DirectoryCards() {
   return (
     <div
       ref={containerRef}
-      className="relative flex justify-center items-start min-h-screen pt-12"
+      className="relative flex justify-center items-start  pt-12"
     >
       <div className="flex gap-24 z-10">
         <div ref={rolesRef}>
@@ -159,7 +159,7 @@ export default function DirectoryCards() {
                     y1={centerY}
                     x2={spineX}
                     y2={centerY}
-                    stroke="#9CA3AF"
+                    stroke="#ffffffff"
                     strokeWidth="1"
                   />
 
@@ -169,7 +169,7 @@ export default function DirectoryCards() {
                     y1={top}
                     x2={spineX}
                     y2={bottom}
-                    stroke="#9CA3AF"
+                    stroke="#ffffffff"
                     strokeWidth="1"
                   />
 
@@ -181,7 +181,7 @@ export default function DirectoryCards() {
                       y1={y}
                       x2={coords.oLeft}
                       y2={y}
-                      stroke="#9CA3AF"
+                      stroke="#ffffffff"
                       strokeWidth="1"
                       markerEnd="url(#arrow)"
                     />
@@ -215,7 +215,7 @@ export default function DirectoryCards() {
                       y1={startY}
                       x2={spineX}
                       y2={startY}
-                      stroke="#9CA3AF"
+                      stroke="#ffffffff"
                       strokeWidth="1"
                     />
 
@@ -225,7 +225,7 @@ export default function DirectoryCards() {
                       y1={top}
                       x2={spineX}
                       y2={bottom}
-                      stroke="#9CA3AF"
+                      stroke="#ffffffff"
                       strokeWidth="1"
                     />
 
@@ -237,7 +237,7 @@ export default function DirectoryCards() {
                         y1={y}
                         x2={coords.aLeft}
                         y2={y}
-                        stroke="#9CA3AF"
+                        stroke="#ffffffff"
                         strokeWidth="1"
                         markerEnd="url(#arrow)"
                       />

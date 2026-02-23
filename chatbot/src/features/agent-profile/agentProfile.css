@@ -1,0 +1,204 @@
+.agent-profile-page {
+  min-height: 100vh;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.agent-profile-container {
+  width: 100%;
+  max-width: 1100px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 30px;
+  padding: 20px;
+  position: relative;
+}
+
+/* ================= HEADER ================= */
+
+.profile-header {
+  position: relative;
+}
+
+.cover-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 20px 20px 0 0;
+}
+
+.profile-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.9);
+  padding: 25px 30px;
+  border-radius: 0 0 20px 20px;
+  margin-top: -40px;
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-pic {
+  width: 197px;
+  height: 200px;
+  border-radius: 100px;
+  border: 8px solid white;
+  background: white;
+  margin-top: -80px;
+}
+
+.profile-text h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.profile-text p {
+  margin: 0;
+  color: #6d6d6d;
+}
+
+.profile-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.verified-icon {
+  width: 55px;
+}
+
+.qr-icon {
+  width: 45px;
+}
+
+/* ================= SECTIONS ================= */
+
+.section-card {
+  background: #f9f9f9;
+  padding: 20px;
+  margin-top: 18px;
+  border-radius: 18px;
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #444;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 20px;
+}
+
+.label {
+  font-size: 13px;
+  color: #7b7b7b;
+}
+
+/* ================= MAIN CARD ================= */
+
+.combined-card {
+  background: #f3f3f3;
+  border-radius: 20px;
+  padding: 25px;
+  margin-top: 20px;
+}
+
+.combined-section {
+  padding: 10px 0;
+}
+
+.divider {
+  height: 1px;
+  background: #ddd;
+  margin: 20px 0;
+}
+
+.form-grid {
+  row-gap: 25px;
+}
+
+/* ================= INLINE EDIT FIELDS ================= */
+
+.underline-field {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #cfcfcf;
+  background: transparent;
+  padding: 6px 0;
+  font-weight: 500;
+  outline: none;
+  box-shadow: none;
+  font-size: 14px;
+}
+
+/* On click → underline highlight only */
+.underline-field:focus {
+  outline: none;
+  box-shadow: none;
+  border-bottom: 2px solid #9ca3af;
+}
+
+/* Remove browser blue glow */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Make select look like input */
+select.underline-field {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+}
+
+/* Dropdown container */
+.dropdown-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+}
+
+.dropdown-icon {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ================= GREEN OFFICER TEXT ================= */
+
+.officer {
+  color: #2fa84f;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  margin-top: -8px;
+}
+
+/* ================= DOCUMENT UPLOAD ================= */
+
+.doc-upload {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.doc-box {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #fafafa;
+}

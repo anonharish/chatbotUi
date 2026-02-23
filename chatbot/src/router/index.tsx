@@ -12,6 +12,13 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSelectionPage'))
 const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 const DummyPage = lazy(() => import('@/pages/DummyPage'))
+const DirectoryPage = lazy(() => import('@/pages/DirectoryPage'))
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const AgentProfilePage = lazy(() => import('@/pages/AgentProfilePage'));
+const ProfileInfoPage = lazy(() => import('@/pages/ProfileInfoPage'));
+
+
+
 
 // Loading fallback component
 const PageLoader = () => (
@@ -56,6 +63,24 @@ export const router = createBrowserRouter([
             path: 'region-selection',
             element: withSuspense(RegionSelectionPage),
           },
+           {
+      path: 'dashboardpagev2',
+      element: withSuspense(DashboardPage),
+    },
+    {
+      path: 'directory',
+      element: withSuspense(DirectoryPage),
+    },
+    {
+  path: 'agent-profile',
+  element: withSuspense(AgentProfilePage),
+},
+
+{
+  path: 'profile-info',
+  element: withSuspense(ProfileInfoPage),
+},
+
           {
             path: 'mapbox-region-selection',
             element: withSuspense(MapboxPage),
@@ -68,6 +93,7 @@ export const router = createBrowserRouter([
             path: 'chat',
             element: withSuspense(ChatbotPage),
           },
+        
         ],
       },
     ],
