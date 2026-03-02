@@ -6,16 +6,28 @@ type Props = {
   className?: string;
 };
 
+const figmaShade =
+  "relative overflow-hidden backdrop-blur-xl border border-white/20 rounded-[46px] " +
+  "before:absolute before:inset-0 before:bg-gradient-to-b before:from-blue-200/20 before:to-transparent before:pointer-events-none";
+
 export default function GlassCutCard({ children, className = "" }: Props) {
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full px-2 md:px-4 ${className}`}>
 
-      {/* MAIN CUT CONTAINER */}
-      <div className="relative w-full max-w-[1660px] min-h-[720px] mx-auto">
+      {/* MAIN CONTAINER */}
+      <div className="
+        relative
+        w-full
+        max-w-[1660px]
+        mx-auto
+        min-h-[360px]
+        md:min-h-[420px]
+        lg:min-h-[460px]
+      ">
 
-        {/* SVG GLASS SHAPE */}
+        {/* SVG SHAPE */}
         <svg
-          viewBox="0 0 1304 720"
+          viewBox="0 0 1304 560"
           preserveAspectRatio="none"
           className="absolute inset-0 w-full h-full"
         >
@@ -32,10 +44,10 @@ export default function GlassCutCard({ children, className = "" }: Props) {
                   Q896 0 942 0
                   H1258
                   Q1304 0 1304 46
-                  V674
-                  Q1304 720 1258 720
+                  V520
+                  Q1304 560 1258 560
                   H46
-                  Q0 720 0 674
+                  Q0 560 0 520
                   V46
                   Q0 0 46 0
                   Z
@@ -44,9 +56,17 @@ export default function GlassCutCard({ children, className = "" }: Props) {
             </clipPath>
           </defs>
 
-          {/* FIGMA ACCURATE GLASS FILL */}
+          {/* GLASS */}
           <foreignObject width="100%" height="100%" clipPath="url(#cardShape)">
-            <div className="w-full h-full rounded-[46px] backdrop-blur-[70px] bg-[rgba(120,140,60,0.28)] border border-white/20 shadow-[0px_50px_60px_rgba(0,0,0,0.05)]" />
+            <div
+              className={`
+                ${figmaShade}
+                w-full h-full
+                backdrop-blur-[40px] md:backdrop-blur-[55px] lg:backdrop-blur-[70px]
+                bg-white/10
+                shadow-[0px_40px_50px_rgba(0,0,0,0.05)]
+              `}
+            />
           </foreignObject>
 
           {/* BORDER */}
@@ -61,10 +81,10 @@ export default function GlassCutCard({ children, className = "" }: Props) {
               Q896 0 942 0
               H1258
               Q1304 0 1304 46
-              V674
-              Q1304 720 1258 720
+              V520
+              Q1304 560 1258 560
               H46
-              Q0 720 0 674
+              Q0 560 0 520
               V46
               Q0 0 46 0
               Z
@@ -75,8 +95,18 @@ export default function GlassCutCard({ children, className = "" }: Props) {
           />
         </svg>
 
-        {/* DROPDOWNS INSIDE CUT */}
-        <div className="absolute top-[20px] left-1/2 -translate-x-1/2 flex gap-6 z-20">
+        {/* DROPDOWNS */}
+        <div className="
+          absolute
+          top-[18px]
+          md:top-[24px]
+          lg:top-[12px]
+          left-1/2 -translate-x-1/2
+          flex flex-col sm:flex-row
+          items-center
+          gap-2 sm:gap-4 lg:gap-6
+          z-20
+        ">
           <PillDropdownButton
             label="ANDHRA PRADESH"
             options={["Telangana", "Karnataka", "Tamil Nadu"]}
@@ -87,8 +117,15 @@ export default function GlassCutCard({ children, className = "" }: Props) {
           />
         </div>
 
-        {/* PAGE CONTENT */}
-        <div className="relative z-10 pt-[120px] px-10 pb-10">
+        {/* CONTENT */}
+        <div className="
+          relative z-10
+          pt-[110px]
+          md:pt-[120px]
+          lg:pt-[90px]
+          px-4 md:px-6 lg:px-10
+          pb-4 md:pb-6
+        ">
           {children}
         </div>
 
