@@ -1,4 +1,3 @@
-import React from "react";
 
 export default function Gauge({ value = 78 }) {
   const totalTicks = 36;
@@ -8,7 +7,7 @@ export default function Gauge({ value = 78 }) {
 
   return (
     <div className="relative w-[240px] h-[240px]">
-        <svg viewBox="0 0 240 240">
+      <svg viewBox="0 0 240 240">
 
         {[...Array(totalTicks)].map((_, i) => {
           const angle = (i / totalTicks) * 270 - 135;
@@ -19,9 +18,9 @@ export default function Gauge({ value = 78 }) {
           const y2 = 120 + Math.sin(rad) * 100;
 
           return (
-            <line 
+            <line
               key={i}
-              x1={x1} 
+              x1={x1}
               y1={y1}
               x2={x2}
               y2={y2}

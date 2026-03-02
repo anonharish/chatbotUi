@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import AppLayout from '@/layouts/AppLayout'
 import MainLayout from '@/layouts/MainLayout'
 import AuthLayout from '@/layouts/AuthLayout'
+import FullScreenLayout from '@/layouts/FullScreenLayout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import LoginPage from '@/pages/auth/LoginPage'
 
@@ -19,6 +20,7 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const AgentProfilePage = lazy(() => import('@/pages/AgentProfilePage'));
 const ProfileInfoPage = lazy(() => import('@/pages/ProfileInfoPage'));
 const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
+const RegionSectionPage = lazy(() => import("@/pages/region-selection/RegionSelectionPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -51,13 +53,23 @@ export const router = createBrowserRouter([
             element: <LoginPage />,
           },
         ],
+
+      },
+      {
+        element: <FullScreenLayout />,
+        children: [
+          {
+            path: 'mapbox-region-selection',
+            element: withSuspense(MapboxPage),
+          },
+        ],
       },
       {
         element: <MainLayout />,
         children: [
           {
             path: 'dashboard',
-            element: withSuspense(MapboxPage),
+            element: withSuspense(DummyPage),
           },
           {
             path: 'region-selection',
@@ -80,12 +92,12 @@ export const router = createBrowserRouter([
             element: withSuspense(ProfileInfoPage),
           },
           {
-            path: 'design-system',
-            element: withSuspense(DesignSystemPage),
+            path: 'regions',
+            element: withSuspense(RegionSectionPage),
           },
           {
-            path: 'mapbox-region-selection',
-            element: withSuspense(MapboxPage),
+            path: 'design-system',
+            element: withSuspense(DesignSystemPage),
           },
           {
             path: 'dummy',

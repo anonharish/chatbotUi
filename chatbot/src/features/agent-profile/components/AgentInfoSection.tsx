@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { AgentProfile } from "../types/agentProfile.types";
 
 type Props = {
@@ -53,7 +53,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <select
               className="underline-field w-full"
               value={formData.state}
-              onChange={(e)=>handleChange("state", e.target.value)}
+              onChange={(e) => handleChange("state", e.target.value)}
             >
               {Object.keys(STATE_REGION_MAP).map(state => (
                 <option key={state}>{state}</option>
@@ -66,7 +66,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <select
               className="underline-field w-full"
               value={formData.region}
-              onChange={(e)=>handleChange("region", e.target.value)}
+              onChange={(e) => handleChange("region", e.target.value)}
             >
               {regions.map(region => (
                 <option key={region}>{region}</option>
@@ -79,7 +79,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.area}
-              onChange={(e)=>handleChange("area", e.target.value)}
+              onChange={(e) => handleChange("area", e.target.value)}
             />
           </div>
 
@@ -105,7 +105,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.firstName}
-              onChange={(e)=>handleChange("firstName", e.target.value)}
+              onChange={(e) => handleChange("firstName", e.target.value)}
             />
           </div>
 
@@ -114,7 +114,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.lastName}
-              onChange={(e)=>handleChange("lastName", e.target.value)}
+              onChange={(e) => handleChange("lastName", e.target.value)}
             />
           </div>
 
@@ -124,7 +124,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
               type="number"
               className="underline-field w-full"
               value={formData.age}
-              onChange={(e)=>handleChange("age", Number(e.target.value))}
+              onChange={(e) => handleChange("age", Number(e.target.value))}
             />
           </div>
 
@@ -167,7 +167,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.aadhaarNumber}
-              onChange={(e)=>handleChange("aadhaarNumber", e.target.value)}
+              onChange={(e) => handleChange("aadhaarNumber", e.target.value)}
             />
 
             <div className="flex gap-6 mt-5">
@@ -175,7 +175,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
               <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
                 <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
                 <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("aadhaarFrontFile", e.target.files?.[0]?.name)}
+                  onChange={(e) => handleChange("aadhaarFrontFile", e.target.files?.[0]?.name)}
                 />
                 <span className="text-[10px] text-center">
                   {formData.aadhaarFrontFile || "Aadhar_Front.pdf"}
@@ -185,7 +185,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
               <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
                 <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
                 <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("aadhaarBackFile", e.target.files?.[0]?.name)}
+                  onChange={(e) => handleChange("aadhaarBackFile", e.target.files?.[0]?.name)}
                 />
                 <span className="text-[10px] text-center">
                   {formData.aadhaarBackFile || "Aadhar_Back.pdf"}
@@ -201,14 +201,14 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.panNumber}
-              onChange={(e)=>handleChange("panNumber", e.target.value)}
+              onChange={(e) => handleChange("panNumber", e.target.value)}
             />
 
             <div className="flex mt-5">
               <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
                 <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
                 <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("panFile", e.target.files?.[0]?.name)}
+                  onChange={(e) => handleChange("panFile", e.target.files?.[0]?.name)}
                 />
                 <span className="text-[10px] text-center">
                   {formData.panFile || "Pan_Card.pdf"}
@@ -222,7 +222,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.district}
-              onChange={(e)=>handleChange("district", e.target.value)}
+              onChange={(e) => handleChange("district", e.target.value)}
             />
           </div>
 
@@ -231,7 +231,7 @@ export const AgentInfoSection = ({ profile }: Props) => {
             <input
               className="underline-field w-full"
               value={formData.pincode}
-              onChange={(e)=>handleChange("pincode", e.target.value)}
+              onChange={(e) => handleChange("pincode", e.target.value)}
             />
           </div>
 

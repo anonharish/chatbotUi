@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 // import { useNavigate } from 'react-router' // Note: This might cause issues if used outside Router, but context is inside AppLayout
 // However, Router context is usually outside.
 // Wait, Router -> AppLayout -> AuthProvider?

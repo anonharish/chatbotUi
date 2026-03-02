@@ -20,16 +20,16 @@ export const navItems: INavItem[] = [
     {
         icon: UserIcon,
         label: 'Agents',
-        path: '/agents', 
+        path: '/agents',
     },
     {
         icon: MapIcon,
         label: 'Region Selection',
-        path: '/region-selection',
+        path: '/mapbox-region-selection',
     },
     {
         icon: SettingsIcon,
         label: 'Settings',
-        path: '/settings', 
+        path: '/settings',
     },
 ]

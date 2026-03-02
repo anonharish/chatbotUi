@@ -1,4 +1,3 @@
-import React from "react";
 
 const CapsuleBar = (props: any) => {
   const { x, y, width, height, fill } = props;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 interface PillDropdownButtonProps {
@@ -38,7 +38,7 @@ export default function PillDropdownButton({
 "
 
       >
-        
+
         {selected}
         <ChevronDown
           size={18}
