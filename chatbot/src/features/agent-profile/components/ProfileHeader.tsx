@@ -6,7 +6,7 @@ type Props = {
 
 export const ProfileHeader = ({ name, photo, verified }: Props) => {
   return (
-    <div className="profile-header">
+    <div className="profile-header mt-2">
 
       {/* Banner */}
       <div className="profile-banner">
