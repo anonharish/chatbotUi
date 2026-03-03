@@ -19,6 +19,7 @@ const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const AgentProfilePage = lazy(() => import('@/pages/AgentProfilePage'));
 const ProfileInfoPage = lazy(() => import('@/pages/ProfileInfoPage'));
 const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
+const RegionSectionPage = lazy(() => import('@/pages/RegionSectionPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -78,6 +79,10 @@ export const router = createBrowserRouter([
           {
             path: 'profile-info',
             element: withSuspense(ProfileInfoPage),
+          },
+          {
+           path: 'regions',
+           element: withSuspense(RegionSectionPage),
           },
           {
             path: 'design-system',
