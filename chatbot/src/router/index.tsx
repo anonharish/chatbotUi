@@ -20,6 +20,7 @@ const AgentProfilePage = lazy(() => import('@/pages/AgentProfilePage'));
 const ProfileInfoPage = lazy(() => import('@/pages/ProfileInfoPage'));
 const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
 const RegionSectionPage = lazy(() => import('@/pages/RegionSectionPage'));
+const AreaRegionsPage = lazy(() => import('@/pages/AreaRegionsPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
           {
            path: 'regions',
            element: withSuspense(RegionSectionPage),
+          },
+          {
+            path: 'area-regions',
+            element: withSuspense(AreaRegionsPage),
           },
           {
             path: 'design-system',

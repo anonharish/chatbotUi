@@ -3,21 +3,25 @@ import PillDropdownButton from "../ui/PillDropdownButton";
 
 type Props = {
   children?: ReactNode;
-  className?: string;
 };
 
-export default function GlassCutCard({ children, className = "" }: Props) {
+export default function GlassCutCard({ children }: Props) {
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className="relative w-full min-h-screen py-16 flex justify-center">
 
-      {/* MAIN CUT CONTAINER */}
-      <div className="relative w-full max-w-[1660px] min-h-[720px] mx-auto">
+      {/* Background */}
+      <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
 
-        {/* SVG GLASS SHAPE */}
+      {/* Glass Card Wrapper (Increased Width) */}
+      <div className="relative w-[95%] max-w-[1340px] h-[780px]">
+
+        {/* SVG Masked Glass Card */}
         <svg
-          viewBox="0 0 1304 720"
+          width="100%"
+          height="100%"
+          viewBox="0 0 1304 634"
           preserveAspectRatio="none"
-          className="absolute inset-0 w-full h-full"
+          className="absolute inset-0"
         >
           <defs>
             <clipPath id="cardShape">
@@ -32,10 +36,10 @@ export default function GlassCutCard({ children, className = "" }: Props) {
                   Q896 0 942 0
                   H1258
                   Q1304 0 1304 46
-                  V674
-                  Q1304 720 1258 720
+                  V588
+                  Q1304 634 1258 634
                   H46
-                  Q0 720 0 674
+                  Q0 634 0 588
                   V46
                   Q0 0 46 0
                   Z
@@ -44,12 +48,16 @@ export default function GlassCutCard({ children, className = "" }: Props) {
             </clipPath>
           </defs>
 
-          {/* FIGMA ACCURATE GLASS FILL */}
-          <foreignObject width="100%" height="100%" clipPath="url(#cardShape)">
-            <div className="w-full h-full rounded-[46px] backdrop-blur-[70px] bg-[rgba(120,140,60,0.28)] border border-white/20 shadow-[0px_50px_60px_rgba(0,0,0,0.05)]" />
+          {/* Glass Fill */}
+          <foreignObject
+            width="100%"
+            height="100%"
+            clipPath="url(#cardShape)"
+          >
+            <div className="w-full h-full bg-white/20 backdrop-blur-xl border border-white/20 rounded-[46px]" />
           </foreignObject>
 
-          {/* BORDER */}
+          {/* Border */}
           <path
             d="
               M46 0
@@ -61,10 +69,10 @@ export default function GlassCutCard({ children, className = "" }: Props) {
               Q896 0 942 0
               H1258
               Q1304 0 1304 46
-              V674
-              Q1304 720 1258 720
+              V588
+              Q1304 634 1258 634
               H46
-              Q0 720 0 674
+              Q0 634 0 588
               V46
               Q0 0 46 0
               Z
@@ -75,20 +83,21 @@ export default function GlassCutCard({ children, className = "" }: Props) {
           />
         </svg>
 
-        {/* DROPDOWNS INSIDE CUT */}
-        <div className="absolute top-[20px] left-1/2 -translate-x-1/2 flex gap-6 z-20">
+        {/* Dropdown Pills */}
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-6 z-10">
           <PillDropdownButton
             label="ANDHRA PRADESH"
             options={["Telangana", "Karnataka", "Tamil Nadu"]}
           />
+
           <PillDropdownButton
             label="VIZAG ZONE"
             options={["Zone 1", "Zone 2", "Zone 3"]}
           />
         </div>
 
-        {/* PAGE CONTENT */}
-        <div className="relative z-10 pt-[120px] px-10 pb-10">
+        {/* Page Content */}
+       <div className="absolute inset-0 pt-[120px] px-8 pb-8 overflow-y-auto no-scrollbar z-10">
           {children}
         </div>
 
