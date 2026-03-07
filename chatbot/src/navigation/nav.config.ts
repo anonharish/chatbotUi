@@ -30,6 +30,6 @@ export const navItems: INavItem[] = [
     {
         icon: SettingsIcon,
         label: 'Settings',
-        path: '/settings', 
+        path: '/settings-profile', 
     },
 ]
