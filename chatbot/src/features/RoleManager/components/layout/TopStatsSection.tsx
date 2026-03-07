@@ -1,6 +1,7 @@
 import GlassCard from "@/components/ui/GlassCard";
 import Gauge from "@/components/ui/Gauge";
 import CapsuleBar from "@/components/ui/CapsuleBar";
+import { lineData, barData } from "@/data/directoryData";
 
 import {
   LineChart,
@@ -13,22 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const lineData = [
-  { m: "Jan", v: 200 },
-  { m: "Feb", v: 260 },
-  { m: "Mar", v: 210 },
-  { m: "Apr", v: 340 },
-  { m: "May", v: 240 },
-  { m: "Jun", v: 290 },
-  { m: "Jul", v: 250 },
-];
 
-const barData = [
-  { n: "R.O.", v: 120 },
-  { n: "I.O.", v: 140 },
-  { n: "F.O.", v: 320 },
-  { n: "Agents", v: 450 },
-];
 
 export default function TopGraphsSection() {
   return (
@@ -191,7 +177,6 @@ export default function TopGraphsSection() {
         </div>
       </GlassCard>
 
-     {/* Gauge + Workforce (Tablet & Mobile) */}
 {/* Gauge + Workforce (Tablet & Mobile) */}
 <div className="xl:hidden grid grid-cols-1 md:grid-cols-10 gap-6 items-stretch">
 

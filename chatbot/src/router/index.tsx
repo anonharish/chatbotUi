@@ -7,6 +7,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import LoginPage from '@/pages/auth/LoginPage'
 import CardPreviewPage from '@/pages/CardPreviewPage'
 import UserRoles from '@/features/UserRoles'
+import CreateRegionsAreas from '@/components/pages/CreateRegionsAreas'
+import RegionSuccessPage from '@/components/pages/RegionSuccessPage'
 
 
 // Lazy load pages for optimal bundle splitting
@@ -19,7 +21,6 @@ const DummyPage = lazy(() => import ('@/pages/DummyPage'))
 const DirectoryPage = lazy(() => 
   import('@/features/RoleManager/DirectoryPage'))
 const DashboardPage = lazy(() => import ('@/features/RoleManager/DashboardPage'))
-
 const DesignSystemPage = lazy(() => import ('@/pages/DesignSystemPage'))
 
 // Loading fallback component
@@ -91,6 +92,14 @@ export const router = createBrowserRouter([
                         path: 'design-system',
                         element: withSuspense(DesignSystemPage)
                     },
+                    {
+  path: "region-success",
+  element: withSuspense(RegionSuccessPage)
+},
+                    {
+  path: "create-regions-areas",
+  element: withSuspense(CreateRegionsAreas)
+}
                 ]
             },
         ]

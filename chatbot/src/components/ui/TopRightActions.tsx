@@ -54,17 +54,11 @@
 
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-interface Props {
-  onAddUserRole?: () => void;
-  onAddRegion?: () => void;
-}
-
-export default function TopRightActions({
-  onAddUserRole,
-  onAddRegion,
-}: Props) {
+export default function TopRightActionButton() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="relative">
@@ -90,35 +84,13 @@ export default function TopRightActions({
             shadow-xl
           "
         >
-          <div className="flex flex-col gap-6">
-
-            <button
-              onClick={onAddUserRole}
-              className="flex items-center gap-4 hover:opacity-80 transition"
-            >
-              <div className="w-8 h-8 bg-white/40 rounded-full" />
-              <span className="text-base font-semibold">
-                Create User Role
-              </span>
-            </button>
-
-            <button
-              onClick={onAddRegion}
-              className="flex items-center gap-4 hover:opacity-80 transition"
-            >
-              <div className="w-8 h-8 bg-white/40 rounded-full" />
-              <span className="text-base font-semibold">
-                Create Region / Area
-              </span>
-            </button>
-
-          </div>
+          <div className="flex flex-col gap-6"></div>
         </div>
       </div>
 
       {/* Add Button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => navigate("/UserRoles")}
         className="
           w-12 h-12 md:w-14 md:h-14
           rounded-full
@@ -131,7 +103,7 @@ export default function TopRightActions({
           transition-all
         "
       >
-        {open ? <X size={20} /> : <Plus size={20} />}
+        <Plus size={20} />
       </button>
 
     </div>

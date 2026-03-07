@@ -23,10 +23,10 @@ export const navItems: INavItem[] = [
         path: '/directory', 
     },
     {
-        icon: MapIcon,
-        label: 'Region Selection',
-        path: '/region-selection',
-    },
+  icon: MapIcon,
+  label: 'Region Selection',
+  path: '/create-regions-areas',
+},
     {
         icon: SettingsIcon,
         label: 'Settings',

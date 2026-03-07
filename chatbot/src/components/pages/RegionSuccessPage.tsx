@@ -7,14 +7,8 @@ export default function RegionSuccessPage() {
 
   const regionName = location.state?.regionName || "Region"
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate("/mapbox-region-selection")
-    }, 3000)
 
-    return () => clearTimeout(timer)
-  }, [navigate])
-
+  
   return (
     <div className="relative w-full min-h-[720px] mt-35">
 
