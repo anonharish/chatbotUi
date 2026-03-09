@@ -81,3 +81,53 @@ export const officers: Officer[] = [
     ],
   },
 ];
+export interface RoleData {
+  title: string;
+  desc: string;
+  tag: string;
+  img: string;
+}
+
+export const roleCards: RoleData[] = [
+  {
+    title: "Regional Officer",
+    desc: "Oversees territory strategy and approves final land acquisitions.",
+    tag: "Approval Authority",
+    img: "/src/assets/create-role/regional-officer.png",
+  },
+  {
+    title: "Intelligence Officer",
+    desc: "Validates documentation and ensures all assets are risk-free.",
+    tag: "Risk Assessment",
+    img: "/src/assets/create-role/intelligence-officer.png",
+  },
+  {
+    title: "Field Officer",
+    desc: "Conducts physical inspections to verify boundaries and reality.",
+    tag: "Physical Verification",
+    img: "/src/assets/create-role/field-officer.png",
+  },
+  {
+    title: "Agent",
+    desc: "Sources new land opportunities and drives the deal pipeline.",
+    tag: "Deal Sourcing",
+    img: "/src/assets/create-role/agent.png",
+  },
+]
+
+export const lineData = [
+  { m: "Jan", v: 200 },
+  { m: "Feb", v: 260 },
+  { m: "Mar", v: 210 },
+  { m: "Apr", v: 340 },
+  { m: "May", v: 240 },
+  { m: "Jun", v: 290 },
+  { m: "Jul", v: 250 },
+];
+
+export const barData = [
+  { n: "R.O.", v: 120 },
+  { n: "I.O.", v: 140 },
+  { n: "F.O.", v: 320 },
+  { n: "Agents", v: 450 },
+];
