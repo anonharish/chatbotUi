@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import { MapboxVisualization } from './components/MapboxVisualization'
 import type { Region, DistrictInfo } from './types'
 import { generateId, getNextColor, createDistrictKey, parseDistrictKey } from './types'
+import { useNavigate } from 'react-router-dom';
 
 export const MapboxRegionSelectionFeature = () => {
   // State management
@@ -16,6 +17,8 @@ export const MapboxRegionSelectionFeature = () => {
   const [regionalOfficer, setRegionalOfficer] = useState('')
   const [intelligentOfficer, setIntelligentOfficer] = useState('')
 
+
+  const navigate = useNavigate()
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
@@ -115,10 +118,22 @@ export const MapboxRegionSelectionFeature = () => {
     }
 
     setRegions(prev => [...prev, newRegion])
-    clearSelection()
-  }, [currentSelection, regionName, regionalOfficer, intelligentOfficer, selectedState, regions, selectedDistrictsData, clearSelection])
+clearSelection()
 
-  // Delete region
+navigate("/region-success", {
+  state: { regionName: newRegion.name }
+})
+}, [
+  currentSelection,
+  regionName,
+  regionalOfficer,
+  intelligentOfficer,
+  selectedState,
+  regions,
+  selectedDistrictsData,
+  clearSelection,
+  navigate
+])  // Delete region
   const deleteRegion = useCallback((regionId: string) => {
     setRegions(prev => prev.filter(r => r.id !== regionId))
   }, [])

@@ -1,4 +1,4 @@
-import GlassCutCard from "@/components/pages/GlassCutCard";
+import GlassCutCard from "@/components/pages/GlassCutCardV2";
 import "@/features/agent-profile/agentProfile.css";
 
 import { useAgentProfile } from "@/features/agent-profile/hooks/useAgentProfile";

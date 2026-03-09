@@ -15,12 +15,12 @@ const data = [
   { name: "Agents", value: 450 },
 ];
 
-export default function BarChartCard() {
+export default function BarChartCard({ data }: { data: any[] }) {
   return (
-    <GlassCard className="w-[350px] h-[320px]">
+    <GlassCard className="w-[450px] h-[420px]">
       <h3 className="text-white mb-4">Workforce Structure</h3>
 
-      <ResponsiveContainer width="100%" height="85%">
+      <ResponsiveContainer width="950%" height="100%">
         <BarChart data={data}>
             <CartesianGrid
              stroke="white"
