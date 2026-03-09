@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { AgentProfile } from "@/features/agent-profile/types/agentProfile.types";
+import type { AgentProfile } from "@/features/setting-profile/types/agentProfile.types";
 import AlertsSection from "./AlertsSection";
 
 type Props = {
@@ -16,7 +16,7 @@ export default function ProfileDetailsSection({ profile }: Props) {
       [field]: field === "age" ? Number(value) : value,
     }));
   };
-
+ 
   const Field = ({
     label,
     field,
@@ -51,7 +51,7 @@ export default function ProfileDetailsSection({ profile }: Props) {
       <h2 className="text-gray-600 font-semibold mb-8">
         Personal Details
       </h2>
-
+ 
       <div className="grid grid-cols-2 gap-x-24 gap-y-12">
 
         <Field label="First Name" field="firstName" />

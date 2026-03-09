@@ -1,6 +1,6 @@
 export type AgentProfile = {
-  firstName: string;
-  lastName: string;
-  age: number;
-  phoneNumber: string;
-};
+  firstName: string
+  lastName: string
+  age: number
+  phoneNumber: string
+}
