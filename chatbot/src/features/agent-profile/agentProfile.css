@@ -53,6 +53,15 @@
   margin-top: -80px;
 }
 
+.profile-edit-overlay{
+  width:197px;
+  height:200px;
+  border-radius:100px;
+  background:rgba(0,0,0,0.4);
+  top:-80px;
+  left:0;
+}
+
 .profile-text h2 {
   margin: 0;
   font-size: 20px;
@@ -202,3 +211,4 @@ select.underline-field {
   font-size: 12px;
   background: #fafafa;
 }
+

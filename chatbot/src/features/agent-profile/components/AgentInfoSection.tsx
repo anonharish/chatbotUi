@@ -2,254 +2,320 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AgentProfile } from "../types/agentProfile.types";
 
+type Role = "agent" | "fo" | "ro" | "io";
+
 type Props = {
   profile: AgentProfile;
+  role?: Role;
 };
 
-const STATE_REGION_MAP: Record<string, string[]> = {
-  "Andhra Pradesh": ["Godavari", "Krishna", "Rayalaseema"],
-  Telangana: ["Hyderabad", "Warangal", "Karimnagar"],
-  Karnataka: ["Bangalore", "Mysore", "Hubli"],
-  TamilNadu: ["Chennai", "Coimbatore", "Madurai"],
-  Maharashtra: ["Pune", "Mumbai", "Nagpur"]
+type FieldConfig = {
+  label: string;
+  key: keyof AgentProfile;
+  type: string;
 };
 
-export const AgentInfoSection = ({ profile }: Props) => {
+const ROLE_FORM_CONFIG: Record<Role, FieldConfig[]> = {
+  agent: [
+    { label: "First Name", key: "firstName", type: "text" },
+    { label: "Last Name", key: "lastName", type: "text" },
+    { label: "Age", key: "age", type: "number" },
+    { label: "Phone Number", key: "phone", type: "text" }
+  ],
+  fo: [
+    { label: "First Name", key: "firstName", type: "text" },
+    { label: "Last Name", key: "lastName", type: "text" },
+    { label: "Phone Number", key: "phone", type: "text" }
+  ],
+  ro: [
+    { label: "Name", key: "firstName", type: "text" },
+    { label: "Phone Number", key: "phone", type: "text" }
+  ],
+  io: [
+    { label: "Name", key: "firstName", type: "text" },
+    { label: "Phone Number", key: "phone", type: "text" }
+  ]
+};
+
+export const AgentInfoSection = ({ profile, role = "agent" }: Props) => {
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState(profile);
-  const [phoneError, setPhoneError] = useState("");
 
-  const handleChange = (key: keyof AgentProfile, value: any) => {
-    setFormData(prev => ({
-      ...prev,
+  const [aadhaarFront, setAadhaarFront] = useState("Aadhar_Front.pdf");
+  const [aadhaarBack, setAadhaarBack] = useState("Aadhar_Back.pdf");
+  const [panFile, setPanFile] = useState("Pan_Card.pdf");
+
+  const uploadBoxStyle =
+    "w-[110px] h-[110px] bg-white rounded-xl border shadow-sm flex flex-col items-center justify-center text-xs text-gray-500 cursor-pointer";
+
+  const handleChange = (key: keyof AgentProfile, value: string | number) => {
+    setFormData({
+      ...formData,
       [key]: value
-    }));
+    });
   };
-
-  const validatePhone = (value: string) => {
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(value)) {
-      setPhoneError("Enter valid 10-digit phone number");
-      return false;
-    }
-    setPhoneError("");
-    return true;
-  };
-
-  const regions = STATE_REGION_MAP[formData.state] || [];
 
   return (
-    <div className="combined-card px-8 py-6 space-y-10">
+
+    <div className="bg-[#F4F5F6] rounded-[40px] px-14 py-12 space-y-16 w-full">
 
       {/* REGION */}
+
       <div>
-        <h3 className="section-title">Region/Area Assigned</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-8 mt-6">
+        <h3 className="text-[18px] font-bold text-[#4B4F52]">
+          Region/Area Assigned
+        </h3>
 
-          <div>
-            <label className="label">Select State</label>
-            <select
-              className="underline-field w-full"
-              value={formData.state}
-              onChange={(e)=>handleChange("state", e.target.value)}
-            >
-              {Object.keys(STATE_REGION_MAP).map(state => (
-                <option key={state}>{state}</option>
-              ))}
-            </select>
-          </div>
+        <div className="grid grid-cols-2 gap-x-20 gap-y-14 mt-12">
 
           <div>
-            <label className="label">Select Region</label>
-            <select
-              className="underline-field w-full"
-              value={formData.region}
-              onChange={(e)=>handleChange("region", e.target.value)}
-            >
-              {regions.map(region => (
-                <option key={region}>{region}</option>
-              ))}
-            </select>
-          </div>
+            <label className="text-sm font-bold text-gray-700">
+              Select State
+            </label>
 
-          <div>
-            <label className="label">Select Area</label>
             <input
-              className="underline-field w-full"
-              value={formData.area}
-              onChange={(e)=>handleChange("area", e.target.value)}
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.state || ""}
+              onChange={(e) => handleChange("state", e.target.value)}
             />
           </div>
 
-          {/* RO / IO moved up */}
-          <div className="flex justify-end text-green-600 text-sm -mt-3">
-            {formData.roOfficer || "RO: Jayanth kumar (GLC 0012)"} &nbsp; | &nbsp;
-            {formData.ioOfficer || "IO: Jayanth kumar (GLC 0012)"}
+          <div>
+            <label className="text-sm font-bold text-gray-700">
+              Select Region
+            </label>
+
+            <input
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.region || ""}
+              onChange={(e) => handleChange("region", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-gray-700">
+              Select Area
+            </label>
+
+            <input
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.area || ""}
+              onChange={(e) => handleChange("area", e.target.value)}
+            />
           </div>
 
         </div>
-      </div>
 
-      <div className="divider" />
+      </div>
 
       {/* AGENT DETAILS */}
+
       <div>
-        <h3 className="section-title">Enter Agents Details</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-8 mt-6">
+        <h3 className="text-[18px] font-bold text-[#4B4F52]">
+          Enter Agent Details
+        </h3>
 
-          <div>
-            <label className="label">First Name</label>
-            <input
-              className="underline-field w-full"
-              value={formData.firstName}
-              onChange={(e)=>handleChange("firstName", e.target.value)}
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-x-20 gap-y-14 mt-12">
 
-          <div>
-            <label className="label">Last Name</label>
-            <input
-              className="underline-field w-full"
-              value={formData.lastName}
-              onChange={(e)=>handleChange("lastName", e.target.value)}
-            />
-          </div>
+          {ROLE_FORM_CONFIG[role].map((field) => (
 
-          <div>
-            <label className="label">Age</label>
-            <input
-              type="number"
-              className="underline-field w-full"
-              value={formData.age}
-              onChange={(e)=>handleChange("age", Number(e.target.value))}
-            />
-          </div>
+            <div key={field.key}>
 
-          <div>
-            <label className="label">Phone Number</label>
-            <input
-              className="underline-field w-full"
-              value={formData.phone}
-              maxLength={10}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                handleChange("phone", value);
-                validatePhone(value);
-              }}
-            />
-            {phoneError && (
-              <p className="text-red-500 text-xs mt-1">{phoneError}</p>
-            )}
-          </div>
-
-          {/* FO */}
-          <div className="md:col-span-2 flex justify-end text-green-600 text-sm">
-            {formData.foOfficer || "FO: Ram Verma (GLC 0019)"}
-          </div>
-
-        </div>
-      </div>
-
-      <div className="divider" />
-
-      {/* DOCUMENTS */}
-      <div>
-        <h3 className="section-title">Documents & Details</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-8 mt-6">
-
-          {/* AADHAAR */}
-          <div>
-            <label className="label">Aadhar Card</label>
-            <input
-              className="underline-field w-full"
-              value={formData.aadhaarNumber}
-              onChange={(e)=>handleChange("aadhaarNumber", e.target.value)}
-            />
-
-            <div className="flex gap-6 mt-5">
-
-              <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
-                <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
-                <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("aadhaarFrontFile", e.target.files?.[0]?.name)}
-                />
-                <span className="text-[10px] text-center">
-                  {formData.aadhaarFrontFile || "Aadhar_Front.pdf"}
-                </span>
+              <label className="text-sm font-bold text-gray-700">
+                {field.label}
               </label>
 
-              <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
-                <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
-                <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("aadhaarBackFile", e.target.files?.[0]?.name)}
+              <input
+                type={field.type}
+                className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+                value={String(formData[field.key] ?? "")}
+                onChange={(e) =>
+                  handleChange(
+                    field.key,
+                    field.type === "number"
+                      ? Number(e.target.value)
+                      : e.target.value
+                  )
+                }
+              />
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </div>
+
+      {/* DOCUMENTS */}
+
+      <div>
+
+        <h3 className="text-[18px] font-bold text-[#4B4F52]">
+          Documents & Details
+        </h3>
+
+        <div className="grid grid-cols-2 gap-x-20 gap-y-14 mt-12">
+
+          {/* Aadhaar */}
+
+          <div>
+
+            <label className="text-sm font-bold text-gray-700">
+              Aadhaar Card
+            </label>
+
+            <input
+              placeholder="Aadhaar Card Number"
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+            />
+
+            <div className="flex gap-6 mt-8">
+
+              <label className={uploadBoxStyle}>
+
+                <img src="/src/assets/icons/upload.png" className="w-6 mb-2" />
+
+                {aadhaarFront}
+
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) =>
+                    setAadhaarFront(e.target.files?.[0]?.name || "")
+                  }
                 />
-                <span className="text-[10px] text-center">
-                  {formData.aadhaarBackFile || "Aadhar_Back.pdf"}
-                </span>
+
+              </label>
+
+              <label className={uploadBoxStyle}>
+
+                <img src="/src/assets/icons/upload.png" className="w-6 mb-2" />
+
+                {aadhaarBack}
+
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) =>
+                    setAadhaarBack(e.target.files?.[0]?.name || "")
+                  }
+                />
+
               </label>
 
             </div>
+
           </div>
 
           {/* PAN */}
+
           <div>
-            <label className="label">Pan Card</label>
+
+            <label className="text-sm font-bold text-gray-700">
+              Pan Card
+            </label>
+
             <input
-              className="underline-field w-full"
-              value={formData.panNumber}
-              onChange={(e)=>handleChange("panNumber", e.target.value)}
+              placeholder="Pan Card Number"
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
             />
 
-            <div className="flex mt-5">
-              <label className="flex flex-col items-center justify-center border rounded-xl cursor-pointer w-[90px] h-[90px]">
-                <img src="/src/assets/icons/upload.png" className="w-6 h-6 mb-1" />
-                <input type="file" className="hidden"
-                  onChange={(e)=>handleChange("panFile", e.target.files?.[0]?.name)}
+            <div className="flex mt-8">
+
+              <label className={uploadBoxStyle}>
+
+                <img src="/src/assets/icons/upload.png" className="w-6 mb-2" />
+
+                {panFile}
+
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) =>
+                    setPanFile(e.target.files?.[0]?.name || "")
+                  }
                 />
-                <span className="text-[10px] text-center">
-                  {formData.panFile || "Pan_Card.pdf"}
-                </span>
+
               </label>
+
             </div>
+
           </div>
 
-          <div>
-            <label className="label">District</label>
-            <input
-              className="underline-field w-full"
-              value={formData.district}
-              onChange={(e)=>handleChange("district", e.target.value)}
-            />
-          </div>
+          {/* District */}
 
           <div>
-            <label className="label">Pincode</label>
+
+            <label className="text-sm font-bold text-gray-700">
+              District
+            </label>
+
             <input
-              className="underline-field w-full"
-              value={formData.pincode}
-              onChange={(e)=>handleChange("pincode", e.target.value)}
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.district || ""}
+              onChange={(e) => handleChange("district", e.target.value)}
             />
+
+          </div>
+
+          {/* State */}
+
+          <div>
+
+            <label className="text-sm font-bold text-gray-700">
+              State
+            </label>
+
+            <input
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.state || ""}
+              onChange={(e) => handleChange("state", e.target.value)}
+            />
+
+          </div>
+
+          {/* Pincode */}
+
+          <div>
+
+            <label className="text-sm font-bold text-gray-700">
+              Pincode
+            </label>
+
+            <input
+              className="w-full border-b border-gray-400 bg-transparent py-2 mt-3"
+              value={formData.pincode || ""}
+              onChange={(e) => handleChange("pincode", e.target.value)}
+            />
+
           </div>
 
         </div>
+
       </div>
 
-      {/* SAVE BUTTON */}
-      <div className="flex justify-end pt-4">
-        <button
-          disabled={!!phoneError}
-          onClick={() => navigate("/profile-info")}
-          className={`px-8 py-2 rounded-full font-medium transition
-          ${phoneError ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"}`}
-        >
-          Save
+      {/* BUTTONS */}
+
+      <div className="flex justify-end gap-4 pt-6">
+
+        <button className="px-6 py-2 border rounded-full text-gray-600">
+          Cancel
         </button>
+
+        <button
+          onClick={() => navigate("/profile-info")}
+          className="px-8 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+        >
+          Save Profile
+        </button>
+
       </div>
 
     </div>
+
   );
 };

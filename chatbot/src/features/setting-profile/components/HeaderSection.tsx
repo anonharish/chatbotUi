@@ -6,10 +6,13 @@ type Props = {
   verified?: boolean;
 };
 
-export const ProfileHeader = ({ name, photo, verified }: Props) => {
+export const HeaderSection = ({ name, photo, verified }: Props) => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [preview, setPreview] = useState(photo);
+
+  const [preview, setPreview] = useState<string>(
+    photo || "/src/assets/agents/default.png"
+  );
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -29,7 +32,10 @@ export const ProfileHeader = ({ name, photo, verified }: Props) => {
 
       {/* Banner */}
       <div className="profile-banner">
-        <img src="/src/assets/agents/Bannar.png" className="cover-img" />
+        <img
+          src="/src/assets/agents/Bannar.png"
+          className="cover-img"
+        />
       </div>
 
       {/* Info Card */}
@@ -39,31 +45,36 @@ export const ProfileHeader = ({ name, photo, verified }: Props) => {
         <div className="profile-left">
 
           {/* PROFILE IMAGE */}
-        <div
-        className="profile-pic-wrapper relative cursor-pointer group"
-        onClick={handlePhotoClick}
-      >
+          <div
+            className="profile-pic-wrapper relative cursor-pointer group"
+            onClick={handlePhotoClick}
+          >
 
-        <img src={preview} className="profile-pic" />
+            <img
+              src={preview}
+              className="profile-pic object-cover"
+              alt="Profile"
+            />
 
-        {/* EDIT OVERLAY */}
-        <div className="profile-edit-overlay absolute flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+            {/* EDIT OVERLAY */}
+            <div className="profile-edit-overlay absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition">
 
-          <img
-            src="/src/assets/icons/edit.png"
-            className="w-6 h-6"
-          />
+              <img
+                src="/src/assets/icons/edit.png"
+                className="w-6 h-6"
+                alt="Edit"
+              />
 
-        </div>
+            </div>
 
-      </div>
+          </div>
 
-          {/* Hidden input */}
+          {/* Hidden file input */}
           <input
             type="file"
             accept="image/*"
-            hidden
             ref={fileInputRef}
+            hidden
             onChange={handlePhotoChange}
           />
 
@@ -82,12 +93,14 @@ export const ProfileHeader = ({ name, photo, verified }: Props) => {
             <img
               src="/src/assets/icons/verified.png"
               className="verified-icon"
+              alt="Verified"
             />
           )}
 
           <img
             src="/src/assets/icons/qr.png"
             className="qr-icon"
+            alt="QR"
           />
 
         </div>
