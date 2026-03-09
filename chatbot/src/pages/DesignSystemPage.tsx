@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import GlassCutCard from '@/components/pages/GlassCutCardV2'
+import GlassCutCard from '@/components/pages/GlassCutCard'
 
 export default function DesignSystemPage() {
     return (
