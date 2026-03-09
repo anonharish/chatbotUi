@@ -23,17 +23,10 @@ const DummyPage = lazy(() => import("@/pages/DummyPage"));
 
 const DirectoryPage = lazy(() => import("@/pages/DirectoryPage"));
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
-<<<<<<< HEAD
-const AgentProfilePage = lazy(() => import('@/pages/AgentProfilePage'));
-const ProfileInfoPage = lazy(() => import('@/pages/ProfileInfoPage'));
-const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'))
-const SettingsProfilePage = lazy(() => import('@/pages/SettingsProfilePage'))
-=======
 const AgentProfilePage = lazy(() => import("@/pages/AgentProfilePage"));
 const ProfileInfoPage = lazy(() => import("@/pages/ProfileInfoPage"));
 const DesignSystemPage = lazy(() => import("@/pages/DesignSystemPage"));
 const SettingsProfilePage = lazy(() => import("@/pages/SettingsProfilePage"));
->>>>>>> 7c9f557d4cefc77262e2c4ddc34072ae11b8da76
 
 // Loading fallback component
 const PageLoader = () => (
@@ -95,11 +88,7 @@ export const router = createBrowserRouter([
             element: withSuspense(ProfileInfoPage),
           },
           {
-<<<<<<< HEAD
             path: 'settings-profile',
-=======
-            path: "settings-profile",
->>>>>>> 7c9f557d4cefc77262e2c4ddc34072ae11b8da76
             element: withSuspense(SettingsProfilePage),
           },
           {
