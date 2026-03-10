@@ -46,16 +46,16 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="min-h-screen text-foreground relative">
+    <div className="flex h-screen w-full flex-col text-foreground relative overflow-hidden">
       <div
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url("/background.jpg")',
           boxShadow: "inset 0 0 0 2000px rgba(0, 0, 0, 0.3)",
         }}
       />
 
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white">
+      <header className="flex-shrink-0 z-50 transition-all duration-300 bg-transparent text-white">
         <div className="w-full px-6 my-4 h-14 flex justify-between items-center">
           <div
             className="flex items-center space-x-3 cursor-pointer"
@@ -128,7 +128,7 @@ export default function MainLayout() {
       <Sidebar />
 
       {/* Main content */}
-      <main className="pt-14 w-full h-full">
+      <main className="flex-1 w-full overflow-y-auto relative z-10">
         <Outlet />
       </main>
     </div>
