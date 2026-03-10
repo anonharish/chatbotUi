@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 // import { useNavigate } from 'react-router' // Note: This might cause issues if used outside Router, but context is inside AppLayout
 // However, Router context is usually outside.
 // Wait, Router -> AppLayout -> AuthProvider?
@@ -10,6 +10,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 interface User {
     name: string
     email: string
+    avatar?: string
 }
 
 interface AuthContextType {
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (username: string, password: string): Promise<boolean> => {
         // Mock login logic
         if (username === 'testuser' && password === '123456') {
-            const userObj = { name: 'Test User', email: 'test@example.com' }
+            const userObj = { name: 'Test User', email: 'test@example.com', avatar: 'https://github.com/shadcn.png' }
             setUser(userObj)
             localStorage.setItem('user', JSON.stringify(userObj))
             return true
