@@ -128,7 +128,7 @@ export default function MainLayout() {
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 w-full overflow-y-auto relative z-10">
+      <main className="flex-1 w-full overflow-y-auto relative z-10 mx-6">
         <Outlet />
       </main>
     </div>
