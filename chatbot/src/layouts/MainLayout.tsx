@@ -14,7 +14,10 @@ export default function MainLayout() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
         setIsPopoverOpen(false);
       }
     }
@@ -44,17 +47,14 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen text-foreground relative">
-      {/* Global Background Image */}
       <div
         className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url("/background.jpg")',
-          // Optional: Add a dark overlay to ensure text readability
           boxShadow: "inset 0 0 0 2000px rgba(0, 0, 0, 0.3)",
         }}
       />
 
-      {/* Header - Transparent */}
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent text-white">
         <div className="w-full px-6 my-4 h-14 flex justify-between items-center">
           <div
@@ -67,16 +67,16 @@ export default function MainLayout() {
             {/* Notification Button */}
             <button
               className="
-      w-10 h-10
-      rounded-full
-      flex items-center justify-center
-      border border-white/60
-      bg-white/10
-      backdrop-blur-xl
-      text-white
-      hover:bg-white/20
-      transition-all duration-200
-    "
+                w-10 h-10
+                rounded-full
+                flex items-center justify-center
+                border border-white/60
+                bg-white/10
+                backdrop-blur-xl
+                text-white
+                hover:bg-white/20
+                transition-all duration-200
+                "
             >
               <Bell className="w-6 h-6" />
             </button>
@@ -103,8 +103,12 @@ export default function MainLayout() {
               {isPopoverOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-xl border border-white/20 bg-black/60 backdrop-blur-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden text-left">
                   <div className="px-4 py-3 border-b border-white/10">
-                    <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                    <p className="text-xs text-white/70 truncate">{user?.email}</p>
+                    <p className="text-sm font-medium text-white truncate">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-white/70 truncate">
+                      {user?.email}
+                    </p>
                   </div>
                   <div className="p-1">
                     <button
