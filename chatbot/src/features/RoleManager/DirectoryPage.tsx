@@ -9,8 +9,8 @@ export default function DirectoryPage() {
         {/* TOP GRAPHS */}
         <TopGraphsSection />
         {/* USER DIRECTORY HEADING */}
-        <div className="mt-8">
-          <h2 className="text-white text-3xl font-semibold mt-10 ml-5">
+        <div>
+          <h2 className="text-white text-3xl font-semibold mt-2 ">
             User Directory
           </h2> 
         </div> 
