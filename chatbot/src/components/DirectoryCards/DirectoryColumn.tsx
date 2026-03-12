@@ -10,11 +10,11 @@ type Item = {
 };
 
 const baseCardStyle = `
-  bg-white
-  w-[310px]
-  h-[390px]
-  rounded-[44px]
-  shadow-[0_18px_40px_rgba(0,0,0,0.18)]
+  bg-white/95 backdrop-blur-md
+  w-[260px] lg:w-[280px] xl:w-[310px]
+  h-[400px] xl:h-[450px]
+  rounded-[32px] xl:rounded-[44px]
+  shadow-[0_18px_40px_rgba(0,0,0,0.12)]
   flex flex-col
 `;
 
@@ -29,7 +29,6 @@ export default function DirectoryColumn({
   onItemClick?: (index: number) => void;
   selectedIndex?: number | null;
 }) {
-
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [localData, setLocalData] = useState<Item[]>(data);
@@ -46,10 +45,8 @@ export default function DirectoryColumn({
         <div className="space-y-6">
           {localData.map((item, i) => (
             <div key={i} className="relative space-y-3">
-
               {/* ICONS */}
               <div className="absolute top-0 right-0 flex gap-3">
-
                 {/* EDIT */}
                 <img
                   src="/src/assets/icons/edit.png"
@@ -63,7 +60,6 @@ export default function DirectoryColumn({
                   className="w-4 h-4 cursor-pointer"
                   onClick={() => navigate("/profile-info")}
                 />
-
               </div>
 
               <img
@@ -80,7 +76,6 @@ export default function DirectoryColumn({
               {i !== localData.length - 1 && (
                 <div className="h-[3px] bg-gray-200 mt-10" />
               )}
-
             </div>
           ))}
         </div>
@@ -92,16 +87,13 @@ export default function DirectoryColumn({
 
   return (
     <Card className={`${baseCardStyle} p-5`}>
-
       {/* SEARCH */}
       <div className="mb-4">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={
-            variant === "officers"
-              ? "Search Field Officer"
-              : "Search Agents"
+            variant === "officers" ? "Search Field Officer" : "Search Agents"
           }
           className="w-full bg-gray-100 rounded-full py-2 px-3 text-sm outline-none"
         />
@@ -109,11 +101,7 @@ export default function DirectoryColumn({
 
       <div className="flex-1 overflow-y-auto space-y-6">
         {localData.map((item, i) => {
-
-          if (
-            search &&
-            !item.name.toLowerCase().includes(search.toLowerCase())
-          )
+          if (search && !item.name.toLowerCase().includes(search.toLowerCase()))
             return null;
 
           const isSelected = variant === "officers" && selectedIndex === i;
@@ -129,9 +117,7 @@ export default function DirectoryColumn({
                 isSelected ? "bg-blue-50 border-2 border-blue-300" : ""
               }`}
             >
-
               <div className="flex items-center gap-3 flex-1">
-
                 <img
                   src={item.image}
                   className="w-10 h-10 rounded-full object-cover"
@@ -141,12 +127,10 @@ export default function DirectoryColumn({
                   <p>{item.name}</p>
                   <p className="text-xs text-gray-500">{item.sub}</p>
                 </div>
-
               </div>
 
               {/* ICONS */}
               <div className="flex gap-3 ml-3">
-
                 {/* EDIT */}
                 <img
                   src="/src/assets/icons/edit.png"
@@ -160,14 +144,11 @@ export default function DirectoryColumn({
                   className="w-4 h-4 cursor-pointer"
                   onClick={() => navigate("/profile-info")}
                 />
-
               </div>
-
             </div>
           );
         })}
       </div>
-
     </Card>
   );
 }
