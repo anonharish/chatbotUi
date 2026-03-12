@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   children?: ReactNode;
 };
 
 export default function GlassCutCard({ children }: Props) {
+  const navigate = useNavigate();
+
   return (
     <div className="relative w-full min-h-screen flex justify-center items-center">
-
-      {/* Background */}
-      <div className="absolute inset-0 bg-[url('/background.jpg')] bg-cover bg-center" />
 
       {/* Glass Card Wrapper */}
       <div className="relative w-[1580px] max-w-[96vw] h-[800px] flex justify-center overflow-hidden">
@@ -77,22 +77,21 @@ export default function GlassCutCard({ children }: Props) {
           />
         </svg>
 
-        {/* Dashboard Pill */}
+        {/* Dashboard Pill — ✅ now navigates to /dashboard */}
         <div className="absolute top-[18px] left-1/2 -translate-x-1/2 z-20">
-          <div className="px-32 py-5 rounded-full border border-white/30 bg-white/20 backdrop-blur-md text-white text-sm font-medium shadow-md flex items-center gap-2">
+          <button
+            onClick={() => navigate("/dashboardpage")}
+            className="px-32 py-5 rounded-full border border-white/30 bg-white/20 backdrop-blur-md text-white text-sm font-medium shadow-md flex items-center gap-2 hover:bg-white/30 transition cursor-pointer"
+          >
             ← Dashboard
-          </div>
+          </button>
         </div>
 
         {/* SCROLLABLE CONTENT AREA */}
-        <div
-  className="absolute left-0 right-0 bottom-0 top-[120px] z-10 flex justify-center overflow-y-auto hide-scrollbar"
->
-
+        <div className="absolute left-0 right-0 bottom-0 top-[120px] z-10 flex justify-center overflow-y-auto hide-scrollbar">
           <div className="w-[1180px] max-w-[92%] flex flex-col gap-8">
             {children}
           </div>
-
         </div>
 
       </div>
