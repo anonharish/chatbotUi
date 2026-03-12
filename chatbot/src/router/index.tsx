@@ -51,59 +51,54 @@ export const router = createBrowserRouter([
         path: "/",
         element: <Navigate to="/dashboardpage" replace />,
       },
-      {
-        element: <AuthLayout />,
-        children: [
-          {
-            path: "login",
-            element: <LoginPage />,
-          },
-        ],
-      },
-      {
-        element: <MainLayout />,
-        children: [
-          {
-            path: "dashboard",
-            element: withSuspense(MapboxPage),
-          },
-          {
-            path: "region-selection",
-            element: withSuspense(RegionSelectionPage),
-          },
-          {
-            path: "mapbox-region-selection",
-            element: withSuspense(MapboxPage),
-          },
-          {
-            path: "dummy",
-            element: withSuspense(DummyPage),
-          },
-          {
-            path: "chat",
-            element: withSuspense(ChatbotPage),
-          },
-          {
-            path: "dashboardpage",
-            element: withSuspense(DashboardPage),
-          },
-          {
-            path: "card-preview",
-            element: withSuspense(CardPreviewPage),
-          },
-          {
-            path: "directory",
-            element: withSuspense(DirectoryPage),
-          },
-          {
-            path: "UserRoles",
-            element: withSuspense(UserRoles),
-          },
-          {
-            path: "design-system",
-            element: withSuspense(DesignSystemPage),
-          },
-          {
+       {
+                element: <AuthLayout/>,
+                children: [
+                    {
+                        path: 'login',
+                        element: <LoginPage/>
+                    },
+                ]
+            }, 
+            {
+                element: <MainLayout/>,
+                children: [
+                    {
+                        path: 'dashboard',
+                        element: withSuspense(MapboxPage)
+                    },
+                    {
+                        path: 'region-selection',
+                        element: withSuspense(RegionSelectionPage)
+                    },
+                    {
+                        path: 'mapbox-region-selection',
+                        element: withSuspense(MapboxPage)
+                    },
+                    {
+                        path: 'dummy',
+                        element: withSuspense(DummyPage)
+                    }, {
+                        path: 'chat',
+                        element: withSuspense(ChatbotPage)
+                    }, {
+                        path: 'dashboardpage',
+                        element: withSuspense(DashboardPage)
+
+                    }, {
+                        path: 'card-preview',
+                        element: withSuspense(CardPreviewPage)
+                    }, {
+                        path: "directory",
+                        element: withSuspense(DirectoryPage)
+                    }, {
+                        path: "UserRoles",
+                        element: withSuspense(UserRoles)
+                    }, {
+                        path: 'design-system',
+                        element: withSuspense(DesignSystemPage)
+                    },
+                     {
             path: "agent-profile",
             element: withSuspense(AgentProfilePage),
           },

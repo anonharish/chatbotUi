@@ -59,7 +59,6 @@ export default function GlassCutCard() {
         <div className="w-[31.3%] flex items-center justify-center">
           <TopRightActions
             onAdd={() => console.log("Add")}
-            onToggle={() => console.log("Toggle")}
           />
         </div>
       </div>

@@ -1,12 +1,11 @@
-import { Plus, Pause } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Props {
   onAdd?: () => void;
-  onToggle?: () => void;
 }
 
-export default function TopRightActions({ onAdd, onToggle }: Props) {
+export default function TopRightActions({ onAdd }: Props) {
   const navigate = useNavigate();
 
   return (
@@ -27,24 +26,6 @@ export default function TopRightActions({ onAdd, onToggle }: Props) {
         "
       >
         <Plus size={24} />
-      </button>
-
-      {/* Toggle/List Button */}
-      <button
-        onClick={onToggle}
-        className="
-        w-12 h-12 md:w-14 md:h-14
-        rounded-full
-        flex items-center justify-center
-        bg-white/10
-        backdrop-blur-xl
-        border border-white/40
-        text-white
-        hover:bg-white/20
-        transition-all duration-200
-        "
-      >
-        <Pause size={20} className="transform rotate-90" />
       </button>
     </div>
   );
