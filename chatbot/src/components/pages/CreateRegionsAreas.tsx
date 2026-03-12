@@ -66,8 +66,7 @@ export default function CreateRegionsAreas() {
 
       <div className="hidden md:block relative w-full min-h-[720px]">
 
-        <div className="relative w-full max-w-[1500px] min-h-[720px] mx-auto">
-
+<div className="relative w-full max-w-[1500px] min-h-[720px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16">
           {/* Glass Cut SVG */}
           <svg
             viewBox="0 0 1100 720"
@@ -94,14 +93,13 @@ export default function CreateRegionsAreas() {
 
           {/* Dashboard Button */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-            <button
-              onClick={() => navigate("/dashboardpage")}
-              className="w-[450px] py-3 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 text-white flex items-center justify-center gap-3 hover:bg-white/30 transition"
-            >
-              ← Dashboard
-            </button>
-          </div>
-
+  <button
+    onClick={() => navigate("/dashboardpage")}
+    className="w-[220px] sm:w-[280px] md:w-[360px] lg:w-[450px] py-2 sm:py-3 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 text-white flex items-center justify-center gap-2 sm:gap-3 hover:bg-white/30 transition text-sm sm:text-base"
+  >
+    ← Dashboard
+  </button>
+</div>
           {/* Content */}
           <div className="relative z-10 pt-[140px] px-12 pb-20">
 
@@ -111,13 +109,12 @@ export default function CreateRegionsAreas() {
 
             {/* Cards */}
            <div className="mt-16 w-full px-20">
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-14 justify-items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-14 justify-items-center">
               {cards.map((card, i) => (
                 <div
-  key={i}
-  onClick={goToMap}
-  className="cursor-pointer relative w-[260px] h-[420px] rounded-[40px] border border-white/30 bg-white/10 backdrop-blur-md overflow-hidden hover:scale-105 transition"
->
+                key={i}
+                onClick={goToMap}
+                className="cursor-pointer relative w-[260px] h-[420px] rounded-[40px] border border-white/30 bg-white/10 backdrop-blur-md overflow-hidden hover:scale-105 transition">
 
   {/* Image Section */}
   <div className="h-[230px] flex items-end justify-center">
@@ -144,18 +141,17 @@ export default function CreateRegionsAreas() {
       />
     </svg>
 
-    {/* Text Content */}
-    <div className="absolute bottom-6 left-6 right-6 text-gray-700">
+   <div className="absolute inset-0 px-6 pt-14 pb-6 flex flex-col text-gray-700">
 
-      <h3 className="font-semibold text-[16px]">
-        {card.title}
-      </h3>
+  <h3 className="font-semibold text-[16px] mb-2">
+    {card.title}
+  </h3>
 
-      <p className="text-sm mt-2 leading-relaxed">
-        {card.desc}
-      </p>
+  <p className="text-sm leading-relaxed">
+    {card.desc}
+  </p>
 
-    </div>
+</div>
 
   </div>
 
