@@ -1,54 +1,57 @@
-import {lazy, Suspense} from 'react'
-import {createBrowserRouter, Navigate} from 'react-router-dom'
-import AppLayout from '@/layouts/AppLayout'
-import MainLayout from '@/layouts/MainLayout'
-import AuthLayout from '@/layouts/AuthLayout'
-import ErrorBoundary from '@/components/ErrorBoundary'
-import LoginPage from '@/pages/auth/LoginPage'
-import CardPreviewPage from '@/pages/CardPreviewPage'
-import UserRoles from '@/features/UserRoles'
-import CreateRegionsAreas from '@/components/pages/CreateRegionsAreas'
-import RegionSuccessPage from '@/components/pages/RegionSuccessPage'
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import AppLayout from "@/layouts/AppLayout";
+import MainLayout from "@/layouts/MainLayout";
+import AuthLayout from "@/layouts/AuthLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import LoginPage from "@/pages/auth/LoginPage";
+import CardPreviewPage from "@/pages/CardPreviewPage";
+import UserRoles from "@/features/UserRoles";
+import CreateRegionsAreas from "@/components/pages/CreateRegionsAreas";
+import RegionSuccessPage from "@/components/pages/RegionSuccessPage";
 
-
-// Lazy load pages for optimal bundle splitting
-
-const ChatbotPage = lazy(() => import ('@/pages/chatbot/ChatbotPage'))
-const NotFoundPage = lazy(() => import ('@/pages/NotFoundPage'))
-const RegionSelectionPage = lazy(() => import ('@/pages/region-selection/RegionSelectionPage'))
-const MapboxPage = lazy(() => import ('@/pages/mapbox-region-selection/MapboxPage'))
-const DummyPage = lazy(() => import ('@/pages/DummyPage'))
-const DirectoryPage = lazy(() => 
-  import('@/features/RoleManager/DirectoryPage'))
-const DashboardPage = lazy(() => import ('@/features/RoleManager/DashboardPage'))
+const ChatbotPage = lazy(() => import("@/pages/chatbot/ChatbotPage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+const RegionSelectionPage = lazy(
+  () => import("@/pages/region-selection/RegionSelectionPage"),
+);
+const MapboxPage = lazy(
+  () => import("@/pages/mapbox-region-selection/MapboxPage"),
+);
+const DummyPage = lazy(() => import("@/pages/DummyPage"));
+const DirectoryPage = lazy(
+  () => import("@/features/RoleManager/DirectoryPage"),
+);
+const DashboardPage = lazy(
+  () => import("@/features/RoleManager/DashboardPage"),
+);
 const AgentProfilePage = lazy(() => import("@/pages/AgentProfilePage"));
 const ProfileInfoPage = lazy(() => import("@/pages/ProfileInfoPage"));
 const SettingsProfilePage = lazy(() => import("@/pages/SettingsProfilePage"));
-const DesignSystemPage = lazy(() => import ('@/pages/DesignSystemPage'))
+const DesignSystemPage = lazy(() => import("@/pages/DesignSystemPage"));
 
-// Loading fallback component
 const PageLoader = () => (
-    <div className="flex min-h-screen items-center justify-center">
+  <div className="flex min-h-screen items-center justify-center">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-    </div>
-)
+  </div>
+);
 
-// Wrap lazy components with Suspense
 const withSuspense = (Component: React.ComponentType) => (
   <Suspense fallback={<PageLoader />}>
     <Component />
-    </Suspense>
+  </Suspense>
 );
 
 export const router = createBrowserRouter([
-    {
-        element: <AppLayout/>,
-        errorElement: <ErrorBoundary/>,
-        children: [
-            {
-                path: '/',
-                element: <Navigate to="/dashboard" replace/>
-            }, {
+  {
+    element: <AppLayout />,
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        path: "/",
+        element: <Navigate to="/dashboardpage" replace />,
+      },
+       {
                 element: <AuthLayout/>,
                 children: [
                     {
@@ -107,24 +110,26 @@ export const router = createBrowserRouter([
             path: "settings-profile",
             element: withSuspense(SettingsProfilePage),
           },
-                    {
-  path: "region-success",
-  element: withSuspense(RegionSuccessPage)
-},
-                    {
-  path: "create-regions-areas",
-  element: withSuspense(CreateRegionsAreas)
-}
-                ]
-            },
-        ]
-    }, {
-        path: '/404',
-        element: withSuspense(NotFoundPage)
-    }, {
-        path: '*',
-        element: <Navigate to="/404" replace/>
-    },
-])
+          {
+            path: "region-success",
+            element: withSuspense(RegionSuccessPage),
+          },
+          {
+            path: "create-regions-areas",
+            element: withSuspense(CreateRegionsAreas),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: "/404",
+    element: withSuspense(NotFoundPage),
+  },
+  {
+    path: "*",
+    element: <Navigate to="/404" replace />,
+  },
+]);
 
 export default router;
