@@ -131,3 +131,28 @@ body {
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Intel Feed View animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+/* Mandal hover tooltip (MapLibre popup inside IntelFeedView) */
+.mandal-tooltip .maplibregl-popup-content {
+  background: rgba(5, 10, 20, 0.92);
+  border: 1px solid rgba(0, 242, 255, 0.35);
+  border-radius: 0;
+  padding: 8px 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 16px rgba(0, 242, 255, 0.15);
+}
+.mandal-tooltip .maplibregl-popup-tip {
+  border-top-color: rgba(0, 242, 255, 0.35) !important;
+  border-bottom-color: rgba(0, 242, 255, 0.35) !important;
+}

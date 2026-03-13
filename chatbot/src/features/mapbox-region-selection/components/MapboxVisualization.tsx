@@ -26,10 +26,9 @@ interface MapboxVisualizationProps {
   onStateHover?: (stateName: string | null) => void
   onDistrictClick?: (districtId: number, districtName: string, stateName: string) => void
   onDistrictHover?: (districtName: string | null) => void
-  // New props for region management
   regions?: Region[]
   currentSelection?: Set<string>  // Composite keys: "stateName_featureId"
-  selectedState?: string | null
+  onRegionClick?: (regionId: string) => void
   // Callback to provide parent with a method to get district features
   onRegisterGetFeatures?: (getter: (ids: Set<number>) => GeoJSON.Feature[]) => void
 }
@@ -56,6 +55,7 @@ export const MapboxVisualization = ({
   onDistrictHover,
   regions = [],
   currentSelection = new Set(),
+  onRegionClick,
   onRegisterGetFeatures,
 }: MapboxVisualizationProps) => {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -70,7 +70,6 @@ export const MapboxVisualization = ({
   // Store district features for retrieval
   const districtFeaturesRef = useRef<Feature[]>([])
 
-  // Tooltip state
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
     x: 0,
@@ -85,6 +84,7 @@ export const MapboxVisualization = ({
   const onDistrictHoverRef = useRef(onDistrictHover)
   const regionsRef = useRef(regions)
   const currentSelectionRef = useRef(currentSelection)
+  const onRegionClickRef = useRef(onRegionClick)
 
 
   // Update refs when props change
@@ -95,7 +95,8 @@ export const MapboxVisualization = ({
     onDistrictHoverRef.current = onDistrictHover
     regionsRef.current = regions
     currentSelectionRef.current = currentSelection
-  }, [onStateClick, onStateHover, onDistrictClick, onDistrictHover, regions, currentSelection])
+    onRegionClickRef.current = onRegionClick
+  }, [onStateClick, onStateHover, onDistrictClick, onDistrictHover, regions, currentSelection, onRegionClick])
 
   // Register the getDistrictFeatures function with parent
   useEffect(() => {
@@ -274,9 +275,19 @@ export const MapboxVisualization = ({
             })
           }
         })
+
+        map.on('click', 'all-regions-fill', (e) => {
+          if (e.features && e.features.length > 0) {
+            const regionId = e.features[0].properties?.regionId
+            if (regionId && onRegionClickRef.current) {
+              onRegionClickRef.current(regionId)
+            }
+          }
+        })
       }
     }
   }, [regions])
+
 
 
   useEffect(() => {

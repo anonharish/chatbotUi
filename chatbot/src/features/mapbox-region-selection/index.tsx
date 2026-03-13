@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { MapboxVisualization } from './components/MapboxVisualization'
+import { IntelFeedView } from './components/IntelFeedView'
 import type { Region, DistrictInfo } from './types'
 import { generateId, getNextColor, createDistrictKey, parseDistrictKey } from './types'
 
@@ -8,6 +9,7 @@ export const MapboxRegionSelectionFeature = () => {
   // State management
   const [selectedState, setSelectedState] = useState<string | null>(null)
   const [regions, setRegions] = useState<Region[]>([])
+  const [focusedRegionId, setFocusedRegionId] = useState<string | null>(null)
   // Use string composite keys: "stateName_featureId"
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set())
   const [districtInfoMap, setDistrictInfoMap] = useState<Map<string, DistrictInfo>>(new Map())
@@ -139,7 +141,14 @@ export const MapboxRegionSelectionFeature = () => {
     setSelectedState(null)
     setCurrentSelection(new Set())
     setDistrictInfoMap(new Map())
+    setFocusedRegionId(null)
   }, [])
+
+  const handleRegionClick = useCallback((regionId: string) => {
+    setFocusedRegionId(regionId)
+  }, [])
+
+  const focusedRegion = regions.find(r => r.id === focusedRegionId) ?? null
 
   return (
     <div
@@ -174,9 +183,9 @@ export const MapboxRegionSelectionFeature = () => {
         onStateClick={handleStateClick}
         onDistrictClick={handleDistrictClick}
         onDistrictHover={setHoveredDistrict}
+        onRegionClick={handleRegionClick}
         regions={regions}
         currentSelection={currentSelection}
-        selectedState={selectedState}
         onRegisterGetFeatures={(getter) => { getDistrictFeaturesRef.current = getter }}
       />
 
@@ -444,6 +453,13 @@ export const MapboxRegionSelectionFeature = () => {
           </div>
         </div>
       </div>
+
+      {focusedRegion && (
+        <IntelFeedView
+          region={focusedRegion}
+          onClose={() => setFocusedRegionId(null)}
+        />
+      )}
     </div>
   )
 }
