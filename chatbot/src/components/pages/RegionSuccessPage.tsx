@@ -6,12 +6,6 @@ export default function RegionSuccessPage() {
   const location = useLocation()
 
   const regionName = location.state?.regionName || "Area"
-
-
-  
-
-    
-
   return (
     <div className="relative w-full mt-24">
 
