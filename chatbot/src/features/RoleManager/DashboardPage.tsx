@@ -12,6 +12,8 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+    Tooltip
+
 } from "recharts";
 
 const lineData = [
@@ -74,6 +76,15 @@ export default function DashboardPage() {
                   tickLine={false}
                   tickMargin={14}
                 />
+                 <Tooltip
+    contentStyle={{
+      background: "rgba(0,0,0,0.8)",
+      border: "1px solid rgba(255,255,255,0.2)",
+      borderRadius: "8px",
+      color: "white"
+    }}
+    cursor={{ stroke: "white", strokeOpacity: 0.2 }}
+  />
 
                 <Line
                   type="monotone"
@@ -153,6 +164,15 @@ export default function DashboardPage() {
                 axisLine={false}
                 tickLine={false}
               />
+               <Tooltip
+    contentStyle={{
+      background: "rgba(0,0,0,0.8)",
+      border: "1px solid rgba(255,255,255,0.2)",
+      borderRadius: "8px",
+      color: "white"
+    }}
+    cursor={{ stroke: "white", strokeOpacity: 0.2 }}
+  />
 
               <XAxis
                 dataKey="m"
