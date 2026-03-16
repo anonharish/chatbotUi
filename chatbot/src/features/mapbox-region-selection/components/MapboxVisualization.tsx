@@ -614,30 +614,44 @@ export const MapboxVisualization = ({
             generateId: true,
           });
 
-          // India country border - glow
-          map.addLayer({
-            id: "india-border-glow",
-            type: "line",
-            source: "india-states",
-            paint: {
-              "line-color": "#ffffff",
-              "line-width": 2,
-              "line-opacity": 0.8,
-              "line-blur": 1,
-            },
-          });
+          // Create a single India outline by unioning all states
+          try {
+            const indiaOutline = turf.union(turf.featureCollection(featuresWithIds) as any);
+            
+            if (indiaOutline) {
+              map.addSource("india-outline", {
+                type: "geojson",
+                data: indiaOutline,
+              });
 
-          // India country border - main
-          map.addLayer({
-            id: "india-border-main",
-            type: "line",
-            source: "india-states",
-            paint: {
-              "line-color": "#ffffff",
-              "line-width": 2,
-              "line-opacity": 0.2,
-            },
-          });
+              // India country border - main (Outer Only)
+              map.addLayer({
+                id: "india-border-main",
+                type: "line",
+                source: "india-outline",
+                paint: {
+                  "line-color": "#ffffff",
+                  "line-width": 3, // High pixel width
+                  "line-opacity": 1,
+                },
+              });
+
+              // Add a thin outer stroke for extra definition
+              map.addLayer({
+                id: "india-border-glow",
+                type: "line",
+                source: "india-outline",
+                paint: {
+                  "line-color": "#ffffff",
+                  "line-width": 2,
+                  "line-opacity": 0.5,
+                  "line-blur": 2,
+                },
+              });
+            }
+          } catch (e) {
+            console.error("Failed to create India outline:", e);
+          }
 
           // State fill for hover/click
           map.addLayer({
@@ -655,15 +669,15 @@ export const MapboxVisualization = ({
             },
           });
 
-          // State borders - green
+          // State borders - white with very low intensity (Internal)
           map.addLayer({
             id: "india-state-borders",
             type: "line",
             source: "india-states",
             paint: {
               "line-color": "#ffffff",
-              "line-width": 2,
-              "line-opacity": 0.9,
+              "line-width": 1,
+              "line-opacity": 0.5, // Very faint internal borders
             },
           });
 
@@ -687,6 +701,9 @@ export const MapboxVisualization = ({
       }
       hoveredStateIdRef.current = null;
       onStateHoverRef.current?.(null);
+      
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      setTooltip((prev) => ({ ...prev, visible: false }));
     });
 
     map.on("mousemove", "india-state-fill", (e) => {
@@ -711,7 +728,17 @@ export const MapboxVisualization = ({
         );
 
         const stateName = feature.properties?.ST_NM;
-        if (stateName) onStateHoverRef.current?.(stateName);
+        if (stateName) {
+           onStateHoverRef.current?.(stateName);
+           // Show simple tooltip with just the state name
+           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+           setTooltip({
+             visible: true,
+             x: e.originalEvent.clientX,
+             y: e.originalEvent.clientY,
+             text: stateName,
+           });
+        }
       }
     });
 
