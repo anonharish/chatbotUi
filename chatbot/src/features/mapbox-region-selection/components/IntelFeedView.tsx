@@ -11,15 +11,24 @@ interface IntelFeedViewProps {
 }
 
 interface FieldOfficer {
+  id: string;
   name: string;
   phone: string;
   mandals: string[];
+  mandalIds: string[];
   district: string;
   region: string;
   state: string;
+  color: string;
 }
 
+const OFFICER_COLORS = [
+  "#ef4444", "#3b82f6", "#eab308", "#ec4899", "#a855f7",
+  "#22c55e", "#f97316", "#14b8a6", "#6366f1", "#8b5cf6"
+];
+
 import { STATE_NAME_TO_SHAPEFILE, SUBDISTRICT_FILE_OVERRIDES } from "@/features/region-selection/constants";
+import { useRegionContext } from "../RegionContext";
 
 
 const SUBDISTRICTS_BASE =
@@ -48,11 +57,13 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
     new Map(),
   );
 
+  const { updateRegionOfficers } = useRegionContext();
+
   const [panelMode, setPanelMode] = useState<"info" | "form">("info");
 
   const [foName, setFoName] = useState("");
   const [foPhone, setFoPhone] = useState("");
-  const [savedOfficers, setSavedOfficers] = useState<FieldOfficer[]>([]);
+  const savedOfficers = region.fieldOfficers ?? [];
   const [formSuccess, setFormSuccess] = useState(false);
 
 
@@ -101,6 +112,23 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
       setMounted(true);
 
       // ── District fill layer ─────────────────────────────────────────────
+      // Restore previously saved officers feature-state on map load
+      const applySavedOfficersFeatureState = () => {
+        if (!region.fieldOfficers?.length) return;
+        region.fieldOfficers.forEach(officer => {
+            officer.mandalIds.forEach(id => {
+              map.setFeatureState(
+                { source: "mandals", id: Number(id) },
+                {
+                  selected: false,
+                  assignedColor: officer.color,
+                  assignedOfficerName: officer.name
+                }
+              );
+            });
+        });
+      };
+
       const districtFC: FeatureCollection = {
         type: "FeatureCollection",
         features: (region.geometry ?? []) as Feature[],
@@ -189,12 +217,16 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
                 "case",
                 ["boolean", ["feature-state", "selected"], false],
                 "#00ff88",
+                ["!=", ["feature-state", "assignedColor"], null],
+                ["feature-state", "assignedColor"],
                 "rgba(0,242,255,0.04)",
               ],
               "fill-opacity": [
                 "case",
                 ["boolean", ["feature-state", "selected"], false],
                 0.35,
+                ["!=", ["feature-state", "assignedColor"], null],
+                0.4,
                 0.1,
               ],
             },
@@ -232,14 +264,27 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
             const name =
               f.properties?.sdtname || f.properties?.mandalId || "Unknown";
             const district = f.properties?.dtname || "";
+            
+            const state = e.features[0].state || {};
+            const officerName = state.assignedOfficerName;
+            const officerColor = state.assignedColor;
+
+            let html = `<div style="font-family:monospace;font-size:11px;color:#00f2ff;letter-spacing:.06em;line-height:1.5">
+                  <div style="color:#00ff88;font-weight:700;font-size:12px">${name}</div>
+                  ${district ? `<div style="color:rgba(0,242,255,0.55);font-size:10px">${district}</div>` : ""}`;
+
+            if (officerName && officerColor) {
+              html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);color:${officerColor}">
+                  <div style="font-size:8px;opacity:0.8;letter-spacing:0.15em;text-transform:uppercase">Assigned Officer</div>
+                  <div style="font-weight:700;font-size:12px">${officerName}</div>
+              </div>`;
+            }
+            
+            html += `</div>`;
+
             tooltip
               .setLngLat(e.lngLat)
-              .setHTML(
-                `<div style="font-family:monospace;font-size:11px;color:#00f2ff;letter-spacing:.06em;line-height:1.5">
-                  <div style="color:#00ff88;font-weight:700;font-size:12px">${name}</div>
-                  ${district ? `<div style="color:rgba(0,242,255,0.55);font-size:10px">${district}</div>` : ""}
-                </div>`,
-              )
+              .setHTML(html)
               .addTo(map);
           });
 
@@ -280,6 +325,8 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
               return next;
             });
           });
+          // ── Update pre-existing states on map  ─────────────
+          applySavedOfficersFeatureState();
         })
         .catch((err) => {
           setMandalError(err.message);
@@ -315,25 +362,41 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
   // ── Save field officer ──────────────────────────────────────────────────────
   const saveOfficer = useCallback(() => {
     if (!foName.trim()) return;
+    
+    const color = OFFICER_COLORS[savedOfficers.length % OFFICER_COLORS.length];
+    const officerId = `fo-${Date.now()}`;
     const mandalNames = [...selectedMandals.values()];
+    const mandalIds = [...selectedMandals.keys()];
+
     const officer: FieldOfficer = {
+      id: officerId,
       name: foName.trim(),
       phone: foPhone.trim(),
       mandals: mandalNames,
+      mandalIds: mandalIds,
       district: region.districtNames?.join(", ") || "",
       region: region.name,
       state: region.state,
+      color: color,
     };
-    setSavedOfficers((prev) => [...prev, officer]);
+
+    const updatedOfficers = [...savedOfficers, officer];
+    updateRegionOfficers(region.id, updatedOfficers);
+
     setFoName("");
     setFoPhone("");
-    // Clear map selections
+    
+    // Process map selections and apply assigned fields
     const map = mapRef.current;
     if (map) {
       selectedRef.current.forEach((id) => {
         map.setFeatureState(
           { source: "mandals", id: Number(id) },
-          { selected: false },
+          { 
+            selected: false,
+            assignedColor: color,
+            assignedOfficerName: officer.name
+          },
         );
       });
     }
@@ -344,7 +407,7 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
       setFormSuccess(false);
       setPanelMode("info");
     }, 2000);
-  }, [foName, foPhone, selectedMandals, region]);
+  }, [foName, foPhone, selectedMandals, region, savedOfficers, updateRegionOfficers]);
 
   return (
     <div
@@ -659,18 +722,22 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
                       <div
                         key={i}
                         style={{
-                          border: "1px solid rgba(0,255,136,0.2)",
+                          border: `1px solid ${o.color}44`,
                           padding: "7px 10px",
-                          background: "rgba(0,255,136,0.03)",
+                          background: `${o.color}11`,
                         }}
                       >
                         <div
                           style={{
                             fontSize: "0.72rem",
-                            color: "#00ff88",
+                            color: o.color,
                             fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px"
                           }}
                         >
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: o.color, boxShadow: `0 0 6px ${o.color}` }} />
                           {o.name}
                         </div>
                         <div

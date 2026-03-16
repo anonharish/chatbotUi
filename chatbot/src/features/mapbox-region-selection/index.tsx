@@ -4,11 +4,13 @@ import { MapboxVisualization } from './components/MapboxVisualization'
 import { IntelFeedView } from './components/IntelFeedView'
 import type { Region, DistrictInfo } from './types'
 import { generateId, getNextColor, createDistrictKey, parseDistrictKey } from './types'
+import { RegionProvider, useRegionContext } from './RegionContext'
 
-export const MapboxRegionSelectionFeature = () => {
+export const MapboxRegionSelectionFeatureInner = () => {
   // State management
+  const { regions, addRegion, deleteRegion } = useRegionContext()
   const [selectedState, setSelectedState] = useState<string | null>(null)
-  const [regions, setRegions] = useState<Region[]>([])
+  
   const [focusedRegionId, setFocusedRegionId] = useState<string | null>(null)
   // Use string composite keys: "stateName_featureId"
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set())
@@ -116,17 +118,14 @@ export const MapboxRegionSelectionFeature = () => {
       intelligentOfficer: intelligentOfficer.trim(),
       state: selectedState,
       geometry: geometry,
+      fieldOfficers: [],
     }
 
-    setRegions(prev => [...prev, newRegion])
+    addRegion(newRegion)
     clearSelection()
-  }, [currentSelection, regionName, regionalOfficer, intelligentOfficer, selectedState, regions, selectedDistrictsData, clearSelection])
+  }, [currentSelection, regionName, regionalOfficer, intelligentOfficer, selectedState, regions, selectedDistrictsData, clearSelection, addRegion])
 
-  // Delete region
-  const deleteRegion = useCallback((regionId: string) => {
-    setRegions(prev => prev.filter(r => r.id !== regionId))
-  }, [])
-
+  // Delete region handled by Context directly now
   // Remove district from selection
   const removeFromSelection = useCallback((districtKey: string) => {
     setCurrentSelection(prev => {
@@ -464,4 +463,10 @@ export const MapboxRegionSelectionFeature = () => {
   )
 }
 
-
+export const MapboxRegionSelectionFeature = () => {
+  return (
+    <RegionProvider>
+      <MapboxRegionSelectionFeatureInner />
+    </RegionProvider>
+  )
+}

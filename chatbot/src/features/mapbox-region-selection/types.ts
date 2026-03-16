@@ -1,5 +1,22 @@
 // Types for Mapbox Region Selection feature
 
+export interface FieldOfficer {
+  id: string;
+  name: string;
+  phone: string;
+  mandals: string[];
+  mandalIds: string[];
+  district: string;
+  region: string;
+  state: string;
+  color: string;
+}
+
+export const OFFICER_COLORS = [
+  "#ef4444", "#3b82f6", "#eab308", "#ec4899", "#a855f7",
+  "#22c55e", "#f97316", "#14b8a6", "#6366f1", "#8b5cf6"
+];
+
 export interface Region {
   id: string
   name: string
@@ -11,6 +28,7 @@ export interface Region {
   state: string               // Parent state name
   // GeoJSON features for persistent rendering across all states
   geometry?: GeoJSON.Feature[]
+  fieldOfficers?: FieldOfficer[]
 }
 
 export interface DistrictInfo {
