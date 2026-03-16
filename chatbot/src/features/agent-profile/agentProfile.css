@@ -11,7 +11,7 @@
 .agent-profile-container {
   width: 100%;
   max-width: 1100px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 30px;
   padding: 20px;
 }
@@ -22,53 +22,41 @@
   position: relative;
 }
 
-/* Cover Banner */
+/* Banner */
 
 .cover-img {
   width: 100%;
-  height: 220px;
+  height: 160px;
   object-fit: cover;
   border-radius: 20px 20px 0 0;
-}
-
-/* Profile Info Bar */
-
-.profile-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255,255,255,0.9);
-  padding: 20px 30px;
-  border-radius: 0 0 20px 20px;
-  margin-top: -50px;
-}
-
-/* Left Section */
-
-.profile-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+  display: block;
 }
 
 /* ================= PROFILE IMAGE ================= */
 
-.profile-pic-wrapper {
-  position: relative;
-  width: 130px;
-  height: 130px;
-  margin-top: -70px;
+/* Shared absolute-positioned profile pic — works for both pages */
+.profile-pic-wrapper,
+.profile-pic-absolute {
+  position: absolute;
+  left: 20px;
+  bottom: 10px;           /* anchored to bottom of .profile-header — never drifts */
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 5px solid white;
+  background: #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
 }
-
-/* Profile Image */
 
 .profile-pic {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  border: 6px solid white;
   object-fit: cover;
-  background: #e5e7eb;
+  display: block;
+  border-radius: 50%;
 }
 
 /* Edit Overlay */
@@ -77,30 +65,62 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: 0.2s;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .profile-pic-wrapper:hover .profile-edit-overlay {
   opacity: 1;
 }
 
+/* ================= PROFILE INFO BAR ================= */
+
+.profile-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0 0 20px 20px;
+  padding: 12px 20px;
+  position: relative;      /* keeps profile-pic-wrapper/absolute in scope */
+}
+
+/* Spacer pushes text right past the profile pic */
+.profile-pic-spacer {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.profile-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 /* ================= PROFILE TEXT ================= */
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 
 .profile-text h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .profile-text p {
   margin: 0;
   color: #6d6d6d;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* ================= RIGHT ICONS ================= */
@@ -108,15 +128,31 @@
 .profile-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .verified-icon {
-  width: 48px;
+  width: 36px;
 }
 
 .qr-icon {
-  width: 40px;
+  width: 32px;
+}
+
+.edit-profile-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.edit-profile-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* ================= SECTIONS ================= */
@@ -228,10 +264,109 @@ select.underline-field {
   background: #fafafa;
 }
 
-/* ================= RESPONSIVE ================= */
+/* ================= RESPONSIVE — lg (1024px) ================= */
 
-@media (max-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .cover-img {
+    height: 185px;
+    border-radius: 16px 16px 0 0;
+  }
 
+  .profile-info {
+    padding: 14px 24px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .profile-pic-wrapper,
+  .profile-pic-absolute {
+    width: 110px;
+    height: 110px;
+    left: 24px;
+    bottom: 12px;
+    border-width: 6px;
+  }
+
+  .profile-pic-spacer {
+    width: 126px;
+  }
+
+  .profile-left {
+    gap: 16px;
+  }
+
+  .profile-text h2 {
+    font-size: 17px;
+  }
+
+  .profile-text p {
+    font-size: 13px;
+  }
+
+  .profile-right {
+    gap: 12px;
+  }
+
+  .verified-icon {
+    width: 42px;
+  }
+
+  .qr-icon {
+    width: 36px;
+  }
+}
+
+/* ================= RESPONSIVE — xl (1280px+) ================= */
+
+@media (min-width: 1280px) {
+  .cover-img {
+    height: 220px;
+  }
+
+  .profile-info {
+    padding: 16px 30px;
+  }
+
+  .profile-pic-wrapper,
+  .profile-pic-absolute {
+    width: 130px;
+    height: 130px;
+    left: 30px;
+    bottom: 14px;
+    border-width: 7px;
+  }
+
+  .profile-pic-spacer {
+    width: 150px;
+  }
+
+  .profile-left {
+    gap: 20px;
+  }
+
+  .profile-text h2 {
+    font-size: 20px;
+  }
+
+  .profile-text p {
+    font-size: 14px;
+  }
+
+  .profile-right {
+    gap: 14px;
+  }
+
+  .verified-icon {
+    width: 50px;
+  }
+
+  .qr-icon {
+    width: 42px;
+  }
+}
+
+/* ================= RESPONSIVE — mobile (<1024px) ================= */
+
+@media (max-width: 1023px) {
   .profile-info {
     flex-direction: column;
     align-items: flex-start;
@@ -245,5 +380,4 @@ select.underline-field {
   .grid-2 {
     grid-template-columns: 1fr;
   }
-
 }
