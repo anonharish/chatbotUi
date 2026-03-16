@@ -149,7 +149,7 @@ export default function DirectoryCards() {
                                         }
                                         cy={centerY}
                                         r="4"
-                                        fill="#ffffffff"/>
+                                        fill="#F3F3F5"/>
 
 
                                     <line x1={
@@ -158,7 +158,7 @@ export default function DirectoryCards() {
                                         y1={centerY}
                                         x2={spineX}
                                         y2={centerY}
-                                        stroke="#ffffffff"
+                                        stroke="#F3F3F5"
                                         strokeWidth="1"/>
 
 
@@ -166,7 +166,7 @@ export default function DirectoryCards() {
                                         y1={top}
                                         x2={spineX}
                                         y2={bottom}
-                                        stroke="#ffffffff"
+                                        stroke="#F3F3F5"
                                         strokeWidth="1"/> {
                                     officerYs.map((y, i) => (
                                         <line key={i}
@@ -176,7 +176,7 @@ export default function DirectoryCards() {
                                                 coords.oLeft
                                             }
                                             y2={y}
-                                            stroke="#ffffffff"
+                                            stroke="#F3F3F5"
                                             strokeWidth="1"
                                             markerEnd="url(#arrow)"/>
                                     ))
@@ -206,7 +206,7 @@ export default function DirectoryCards() {
                                         }
                                         cy={startY}
                                         r="4"
-                                        fill="#9CA3AF"/>
+                                        fill="#F3F3F5"/>
 
 
                                     <line x1={
@@ -215,7 +215,7 @@ export default function DirectoryCards() {
                                         y1={startY}
                                         x2={spineX}
                                         y2={startY}
-                                        stroke="#ffffffff"
+                                        stroke="#F3F3F5"
                                         strokeWidth="1"/>
 
 
@@ -223,7 +223,7 @@ export default function DirectoryCards() {
                                         y1={top}
                                         x2={spineX}
                                         y2={bottom}
-                                        stroke="#ffffffff"
+                                        stroke="#F3F3F5"
                                         strokeWidth="1"/> {
                                     agentYs.map((y, i) => (
                                         <line key={i}
@@ -233,7 +233,7 @@ export default function DirectoryCards() {
                                                 coords.aLeft
                                             }
                                             y2={y}
-                                            stroke="#ffffffff"
+                                            stroke="#F3F3F5"
                                             strokeWidth="1"
                                             markerEnd="url(#arrow)"/>
                                     ))

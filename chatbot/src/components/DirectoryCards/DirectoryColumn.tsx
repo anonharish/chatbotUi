@@ -107,7 +107,7 @@ export default function DirectoryColumn({
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-6">
+      <div className="flex-1  space-y-6">
         {localData.map((item, i) => {
 
           if (
@@ -125,7 +125,7 @@ export default function DirectoryColumn({
               onClick={() => {
                 if (variant === "officers" && onItemClick) onItemClick(i);
               }}
-              className={`flex items-center justify-between px-2 py-2 rounded-lg ${
+              className={`flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer${
                 isSelected ? "bg-blue-50 border-2 border-blue-300" : ""
               }`}
             >
