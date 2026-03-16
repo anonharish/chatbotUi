@@ -23,7 +23,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
 
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null)
   const navigate = useNavigate()
 
   // Ref for getting district features from map (accepts numeric feature IDs)
@@ -181,7 +180,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
       <MapboxVisualization
         onStateClick={handleStateClick}
         onDistrictClick={handleDistrictClick}
-        onDistrictHover={setHoveredDistrict}
         onRegionClick={handleRegionClick}
         regions={regions}
         currentSelection={currentSelection}
@@ -236,14 +234,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
         </div>
       )}
 
-      {/* Hovered District Indicator */}
-      {hoveredDistrict && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
-          <div className="bg-black/70 text-white px-4 py-2 rounded-lg border border-white/20">
-            <span className="font-medium">{hoveredDistrict}</span>
-          </div>
-        </div>
-      )}
 
       {/* Region Manager Toggle - When sidebar is closed */}
       {!sidebarOpen && selectedState && (

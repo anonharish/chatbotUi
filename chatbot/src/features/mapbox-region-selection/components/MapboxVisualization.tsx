@@ -9,10 +9,8 @@ import type {
 } from "geojson";
 import { getStateDistrictsCdnUrl } from "@/features/region-selection/constants";
 import * as turf from "@turf/turf";
-import type { Region } from "../types";
+import type { Region, FieldOfficer } from "../types";
 import { createDistrictKey } from "../types";
-import { FIELD_OFFICERS, officersToGeoJSON } from "../data";
-import { getOfficerPopupHTML } from "./OfficerPopup";
 
 // India center coordinates
 const INDIA_CENTER: [number, number] = [78.9629, 22.5937];
@@ -39,7 +37,6 @@ interface MapboxVisualizationProps {
   regions?: Region[];
   currentSelection?: Set<string>; // Composite keys: "stateName_featureId"
   onRegionClick?: (regionId: string) => void;
-  // Callback to provide parent with a method to get district features
   onRegisterGetFeatures?: (
     getter: (ids: Set<number>) => GeoJSON.Feature[],
   ) => void;
@@ -51,12 +48,14 @@ interface TooltipState {
   y: number;
   text: string;
   isRegion?: boolean;
+  regionId?: string;
   regionInfo?: {
     name: string;
     regionalOfficer?: string;
     intelligentOfficer?: string;
     districtCount: number;
     state: string;
+    fieldOfficers?: FieldOfficer[];
   };
 }
 
@@ -88,6 +87,9 @@ export const MapboxVisualization = ({
     y: 0,
     text: "",
   });
+
+  // Track hover timeouts
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Store callbacks in refs to avoid useEffect re-runs
   const onStateClickRef = useRef(onStateClick);
@@ -198,6 +200,8 @@ export const MapboxVisualization = ({
                 regionalOfficer: region.regionalOfficer,
                 intelligentOfficer: region.intelligentOfficer,
                 districtCount: region.districtIds.size,
+                // Make field list accessible globally to MapLibre
+                fieldOfficersRaw: JSON.stringify(region.fieldOfficers ?? []), 
               },
               id: allFeatures.length,
             });
@@ -276,10 +280,15 @@ export const MapboxVisualization = ({
               );
             }
           });
-          setTooltip((prev) => ({ ...prev, visible: false }));
+          
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = setTimeout(() => {
+            setTooltip((prev) => ({ ...prev, visible: false }));
+          }, 300); // 300ms buffer to move mouse into popup
         });
 
         map.on("mousemove", "all-regions-fill", (e) => {
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
           if (e.features && e.features.length > 0) {
             const feature = e.features[0];
             const featureId = feature.id as number;
@@ -292,18 +301,26 @@ export const MapboxVisualization = ({
 
             // Show region tooltip
             const props = feature.properties;
+            let loadedOfficers: FieldOfficer[] = [];
+            if (props?.fieldOfficersRaw) {
+              try { loadedOfficers = JSON.parse(props.fieldOfficersRaw); } 
+              catch(e) {}
+            }
+            
             setTooltip({
               visible: true,
               x: e.originalEvent.clientX,
               y: e.originalEvent.clientY,
               text: props?.regionName || "Unknown Region",
               isRegion: true,
+              regionId: props?.regionId,
               regionInfo: {
                 name: props?.regionName || "Unknown",
                 regionalOfficer: props?.regionalOfficer,
                 intelligentOfficer: props?.intelligentOfficer,
                 districtCount: props?.districtCount || 0,
                 state: props?.regionState || "",
+                fieldOfficers: loadedOfficers,
               },
             });
           }
@@ -653,77 +670,6 @@ export const MapboxVisualization = ({
           console.log("State layers added");
         });
 
-      // === FIELD OFFICER CLUSTERS ===
-      // Add clustered GeoJSON source with mock officer data
-      map.addSource("field-officers", {
-        type: "geojson",
-        data: officersToGeoJSON(FIELD_OFFICERS),
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-
-      // Cluster circles — sized and colored by point_count
-      map.addLayer({
-        id: "officer-clusters",
-        type: "circle",
-        source: "field-officers",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": [
-            "step",
-            ["get", "point_count"],
-            "#51bbd6", // teal  < 5
-            5,
-            "#f1f075", // yellow 5–15
-            15,
-            "#f28cb1", // pink  15+
-          ],
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            14, // < 5 (was 18)
-            5,
-            18, // 5–15 (was 24)
-            15,
-            20, // 15+ (was 32)
-          ],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "rgba(255,255,255,0.6)",
-        },
-      });
-
-      // Cluster count label
-      map.addLayer({
-        id: "officer-cluster-count",
-        type: "symbol",
-        source: "field-officers",
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": "{point_count_abbreviated}",
-          "text-font": ["Open Sans Bold"],
-          "text-size": 12, // Reduced from 13
-        },
-        paint: {
-          "text-color": "#1e293b",
-        },
-      });
-
-      // Individual (unclustered) officer pins
-      map.addLayer({
-        id: "officer-unclustered",
-        type: "circle",
-        source: "field-officers",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-color": "#22c55e",
-          "circle-radius": 8,
-          "circle-stroke-width": 2.5,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-
-      console.log("Field officer cluster layers added");
     });
 
     // === STATE HOVER HANDLERS ===
@@ -864,67 +810,6 @@ export const MapboxVisualization = ({
       }
     });
 
-    // === FIELD OFFICER CLUSTER HANDLERS ===
-    // Click cluster → zoom to expand
-    map.on("click", "officer-clusters", async (e) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ["officer-clusters"],
-      });
-      if (!features.length) return;
-      const clusterId = features[0].properties?.cluster_id;
-      const source = map.getSource(
-        "field-officers",
-      ) as maplibregl.GeoJSONSource;
-      if (!source || clusterId === undefined) return;
-
-      try {
-        const zoom = await source.getClusterExpansionZoom(clusterId);
-        const geometry = features[0].geometry;
-        if (geometry.type === "Point") {
-          map.flyTo({
-            center: geometry.coordinates as [number, number],
-            zoom: zoom,
-            duration: 800,
-          });
-        }
-      } catch (err) {
-        console.error("Error expanding cluster:", err);
-      }
-    });
-
-    // Click individual officer → show popup
-    map.on("click", "officer-unclustered", (e) => {
-      if (!e.features || !e.features.length) return;
-      const feature = e.features[0];
-      const coords = (
-        feature.geometry as GeoJSON.Point
-      ).coordinates.slice() as [number, number];
-      const props = feature.properties || {};
-
-      new maplibregl.Popup({
-        offset: 15,
-        className: "officer-popup",
-        maxWidth: "280px",
-      })
-        .setLngLat(coords)
-        .setHTML(getOfficerPopupHTML(props as Record<string, string>))
-        .addTo(map);
-    });
-
-    // Cursor changes on hover
-    map.on("mouseenter", "officer-clusters", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", "officer-clusters", () => {
-      map.getCanvas().style.cursor = "";
-    });
-    map.on("mouseenter", "officer-unclustered", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-    map.on("mouseleave", "officer-unclustered", () => {
-      map.getCanvas().style.cursor = "";
-    });
-
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
 
@@ -942,36 +827,67 @@ export const MapboxVisualization = ({
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Shadcn-style tooltip */}
       {tooltip.visible && (
         <div
-          className="fixed z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+          className="fixed z-50 overflow-hidden rounded-md border border-slate-700/80 bg-slate-900/95 px-4 py-3 text-sm text-slate-100 shadow-2xl animate-in fade-in-0 zoom-in-95 backdrop-blur-md"
           style={{
-            left: tooltip.x + 12,
+            left: tooltip.x + 16,
             top: tooltip.y - 10,
             pointerEvents: "none",
-            minWidth: tooltip.isRegion ? "180px" : "auto",
+            minWidth: tooltip.isRegion ? "240px" : "auto",
           }}
         >
           {tooltip.isRegion && tooltip.regionInfo ? (
-            <div className="space-y-1">
-              <div className="font-semibold text-base">
-                {tooltip.regionInfo.name}
+            <div className="space-y-3">
+              <div>
+                <div className="font-bold text-base text-white">
+                  {tooltip.regionInfo.name}
+                </div>
+                <div className="text-xs text-sky-300/80 font-medium">
+                  {tooltip.regionInfo.state}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {tooltip.regionInfo.state}
-              </div>
-              <div className="text-xs space-y-0.5 pt-1 border-t border-border mt-1">
-                <div>
+              <div className="text-xs space-y-1 pt-2 border-t border-slate-700/50">
+                <div className="flex items-center gap-1.5 text-slate-300">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                   {tooltip.regionInfo.districtCount} district
                   {tooltip.regionInfo.districtCount !== 1 ? "s" : ""}
                 </div>
                 {tooltip.regionInfo.regionalOfficer && (
-                  <div>RO: {tooltip.regionInfo.regionalOfficer}</div>
+                  <div className="text-slate-400">RO: <span className="text-slate-200">{tooltip.regionInfo.regionalOfficer}</span></div>
                 )}
                 {tooltip.regionInfo.intelligentOfficer && (
-                  <div>IO: {tooltip.regionInfo.intelligentOfficer}</div>
+                  <div className="text-slate-400">IO: <span className="text-slate-200">{tooltip.regionInfo.intelligentOfficer}</span></div>
                 )}
+              </div>
+
+              {/* Dynamic Field Officer Interactive Area */}
+              <div className="pt-2 border-t border-slate-700/50 mt-2">
+                 {tooltip.regionInfo.fieldOfficers && tooltip.regionInfo.fieldOfficers.length > 0 ? (
+                    <div className="space-y-2">
+                       <p className="text-xs font-semibold text-emerald-400">
+                          {tooltip.regionInfo.fieldOfficers.length} Assigned Officer{tooltip.regionInfo.fieldOfficers.length !== 1 && 's'}
+                       </p>
+                       <div className="space-y-1 mt-1 mb-2">
+                          {tooltip.regionInfo.fieldOfficers.slice(0, 3).map((fo) => (
+                            <div key={fo.id} className="flex items-center gap-1.5 text-xs text-slate-300">
+                               <div className="w-1.5 h-1.5 rounded-full" style={{ background: fo.color }}></div>
+                               <span className="truncate max-w-[140px]">{fo.name}</span>
+                            </div>
+                          ))}
+                          {tooltip.regionInfo.fieldOfficers.length > 3 && (
+                            <p className="text-[10px] text-slate-500 italic pl-3">
+                              +{tooltip.regionInfo.fieldOfficers.length - 3} more...
+                            </p>
+                          )}
+                       </div>
+                    </div>
+                 ) : (
+                    <div className="pt-1 pb-1">
+                       <p className="text-xs text-slate-400 italic">No field officers active.</p>
+                       <p className="text-[10px] text-slate-500 mt-1">Click region to Add Field Officer.</p>
+                    </div>
+                 )}
               </div>
             </div>
           ) : (
