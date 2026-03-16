@@ -14,7 +14,7 @@ export interface FieldOfficer {
 
 export const OFFICER_COLORS = [
   "#ef4444", "#3b82f6", "#eab308", "#ec4899", "#a855f7",
-  "#22c55e", "#f97316", "#14b8a6", "#6366f1", "#8b5cf6"
+  "#f97316", "#ffffff", "#06b6d4", "#f43f5e", "#fb923c"
 ];
 
 export interface Region {
@@ -52,16 +52,16 @@ export const parseDistrictKey = (key: string): { state: string, featureId: numbe
 
 // Colors for regions (vibrant palette)
 export const REGION_COLORS = [
-  '#22c55e', // Green
   '#3b82f6', // Blue
   '#f59e0b', // Amber
   '#ef4444', // Red
   '#8b5cf6', // Purple
   '#ec4899', // Pink
-  '#14b8a6', // Teal
-  '#f97316', // Orange
   '#06b6d4', // Cyan
-  '#84cc16', // Lime
+  '#f97316', // Orange
+  '#ffd700', // Gold
+  '#ff00ff', // Magenta
+  '#ffffff', // White
 ]
 
 // Get next available color

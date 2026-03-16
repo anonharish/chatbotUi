@@ -21,9 +21,9 @@ const INDIA_STATES_URL =
   "https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson";
 
 // Colors
-const DISTRICT_HOVER_COLOR = "rgba(245, 222, 179, 0.6)"; // Beige/wheat
-const DISTRICT_SELECTED_COLOR = "rgba(135, 206, 250, 0.7)"; // Light sky blue
-const DISTRICT_BORDER_COLOR = "#22d3ee"; // Cyan
+const DISTRICT_HOVER_COLOR = "rgba(255, 191, 0, 0.4)"; // Bright Amber/Yellow
+const DISTRICT_SELECTED_COLOR = "rgba(0, 191, 255, 0.85)"; // Deep Sky Blue
+const DISTRICT_BORDER_COLOR = "#ffffff"; // White for sharp contrast on selections
 
 interface MapboxVisualizationProps {
   onStateClick?: (stateName: string) => void;
@@ -201,7 +201,7 @@ export const MapboxVisualization = ({
                 intelligentOfficer: region.intelligentOfficer,
                 districtCount: region.districtIds.size,
                 // Make field list accessible globally to MapLibre
-                fieldOfficersRaw: JSON.stringify(region.fieldOfficers ?? []), 
+                fieldOfficersRaw: JSON.stringify(region.fieldOfficers ?? []),
               },
               id: allFeatures.length,
             });
@@ -280,7 +280,7 @@ export const MapboxVisualization = ({
               );
             }
           });
-          
+
           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
           hoverTimeoutRef.current = setTimeout(() => {
             setTooltip((prev) => ({ ...prev, visible: false }));
@@ -303,10 +303,11 @@ export const MapboxVisualization = ({
             const props = feature.properties;
             let loadedOfficers: FieldOfficer[] = [];
             if (props?.fieldOfficersRaw) {
-              try { loadedOfficers = JSON.parse(props.fieldOfficersRaw); } 
-              catch(e) {}
+              try {
+                loadedOfficers = JSON.parse(props.fieldOfficersRaw);
+              } catch (e) {}
             }
-            
+
             setTooltip({
               visible: true,
               x: e.originalEvent.clientX,
@@ -616,8 +617,10 @@ export const MapboxVisualization = ({
 
           // Create a single India outline by unioning all states
           try {
-            const indiaOutline = turf.union(turf.featureCollection(featuresWithIds) as any);
-            
+            const indiaOutline = turf.union(
+              turf.featureCollection(featuresWithIds) as any,
+            );
+
             if (indiaOutline) {
               map.addSource("india-outline", {
                 type: "geojson",
@@ -662,7 +665,7 @@ export const MapboxVisualization = ({
               "fill-color": [
                 "case",
                 ["boolean", ["feature-state", "hover"], false],
-                "rgba(139, 196, 98, 0.4)",
+                "rgba(255, 255, 255, 0.25)", // Light white wash instead of green
                 "rgba(0, 0, 0, 0)",
               ],
               "fill-opacity": 1,
@@ -683,7 +686,6 @@ export const MapboxVisualization = ({
 
           console.log("State layers added");
         });
-
     });
 
     // === STATE HOVER HANDLERS ===
@@ -701,7 +703,7 @@ export const MapboxVisualization = ({
       }
       hoveredStateIdRef.current = null;
       onStateHoverRef.current?.(null);
-      
+
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
       setTooltip((prev) => ({ ...prev, visible: false }));
     });
@@ -729,15 +731,15 @@ export const MapboxVisualization = ({
 
         const stateName = feature.properties?.ST_NM;
         if (stateName) {
-           onStateHoverRef.current?.(stateName);
-           // Show simple tooltip with just the state name
-           if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-           setTooltip({
-             visible: true,
-             x: e.originalEvent.clientX,
-             y: e.originalEvent.clientY,
-             text: stateName,
-           });
+          onStateHoverRef.current?.(stateName);
+          // Show simple tooltip with just the state name
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          setTooltip({
+            visible: true,
+            x: e.originalEvent.clientX,
+            y: e.originalEvent.clientY,
+            text: stateName,
+          });
         }
       }
     });
@@ -809,7 +811,10 @@ export const MapboxVisualization = ({
         );
 
         // Get district name from the INDIAN-SHAPEFILES data source (fallback to NAME for AP new districts)
-        const districtName = feature.properties?.dtname || feature.properties?.NAME || "Unknown District";
+        const districtName =
+          feature.properties?.dtname ||
+          feature.properties?.NAME ||
+          "Unknown District";
 
         // Show tooltip at cursor position
         setTooltip({
@@ -831,7 +836,10 @@ export const MapboxVisualization = ({
       if (e.features && e.features.length > 0) {
         const feature = e.features[0];
         const featureId = feature.id as number;
-        const districtName = feature.properties?.dtname || feature.properties?.NAME || "Unknown District";
+        const districtName =
+          feature.properties?.dtname ||
+          feature.properties?.NAME ||
+          "Unknown District";
 
         handleDistrictClick(featureId, districtName);
       }
@@ -876,45 +884,81 @@ export const MapboxVisualization = ({
               </div>
               <div className="text-xs space-y-1 pt-2 border-t border-slate-700/50">
                 <div className="flex items-center gap-1.5 text-slate-300">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
                   {tooltip.regionInfo.districtCount} district
                   {tooltip.regionInfo.districtCount !== 1 ? "s" : ""}
                 </div>
                 {tooltip.regionInfo.regionalOfficer && (
-                  <div className="text-slate-400">RO: <span className="text-slate-200">{tooltip.regionInfo.regionalOfficer}</span></div>
+                  <div className="text-slate-400">
+                    RO:{" "}
+                    <span className="text-slate-200">
+                      {tooltip.regionInfo.regionalOfficer}
+                    </span>
+                  </div>
                 )}
                 {tooltip.regionInfo.intelligentOfficer && (
-                  <div className="text-slate-400">IO: <span className="text-slate-200">{tooltip.regionInfo.intelligentOfficer}</span></div>
+                  <div className="text-slate-400">
+                    IO:{" "}
+                    <span className="text-slate-200">
+                      {tooltip.regionInfo.intelligentOfficer}
+                    </span>
+                  </div>
                 )}
               </div>
 
               {/* Dynamic Field Officer Interactive Area */}
               <div className="pt-2 border-t border-slate-700/50 mt-2">
-                 {tooltip.regionInfo.fieldOfficers && tooltip.regionInfo.fieldOfficers.length > 0 ? (
-                    <div className="space-y-2">
-                       <p className="text-xs font-semibold text-emerald-400">
-                          {tooltip.regionInfo.fieldOfficers.length} Assigned Officer{tooltip.regionInfo.fieldOfficers.length !== 1 && 's'}
-                       </p>
-                       <div className="space-y-1 mt-1 mb-2">
-                          {tooltip.regionInfo.fieldOfficers.slice(0, 3).map((fo) => (
-                            <div key={fo.id} className="flex items-center gap-1.5 text-xs text-slate-300">
-                               <div className="w-1.5 h-1.5 rounded-full" style={{ background: fo.color }}></div>
-                               <span className="truncate max-w-[140px]">{fo.name}</span>
-                            </div>
-                          ))}
-                          {tooltip.regionInfo.fieldOfficers.length > 3 && (
-                            <p className="text-[10px] text-slate-500 italic pl-3">
-                              +{tooltip.regionInfo.fieldOfficers.length - 3} more...
-                            </p>
-                          )}
-                       </div>
+                {tooltip.regionInfo.fieldOfficers &&
+                tooltip.regionInfo.fieldOfficers.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-emerald-400">
+                      {tooltip.regionInfo.fieldOfficers.length} Assigned Officer
+                      {tooltip.regionInfo.fieldOfficers.length !== 1 && "s"}
+                    </p>
+                    <div className="space-y-1 mt-1 mb-2">
+                      {tooltip.regionInfo.fieldOfficers
+                        .slice(0, 3)
+                        .map((fo) => (
+                          <div
+                            key={fo.id}
+                            className="flex items-center gap-1.5 text-xs text-slate-300"
+                          >
+                            <div
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ background: fo.color }}
+                            ></div>
+                            <span className="truncate max-w-[140px]">
+                              {fo.name}
+                            </span>
+                          </div>
+                        ))}
+                      {tooltip.regionInfo.fieldOfficers.length > 3 && (
+                        <p className="text-[10px] text-slate-500 italic pl-3">
+                          +{tooltip.regionInfo.fieldOfficers.length - 3} more...
+                        </p>
+                      )}
                     </div>
-                 ) : (
-                    <div className="pt-1 pb-1">
-                       <p className="text-xs text-slate-400 italic">No field officers active.</p>
-                       <p className="text-[10px] text-slate-500 mt-1">Click region to Add Field Officer.</p>
-                    </div>
-                 )}
+                  </div>
+                ) : (
+                  <div className="pt-1 pb-1">
+                    <p className="text-xs text-slate-400 italic">
+                      No field officers active.
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Click region to Add Field Officer.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
