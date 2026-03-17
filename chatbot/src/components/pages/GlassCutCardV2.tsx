@@ -9,7 +9,10 @@ export default function GlassCutCard({ children }: Props) {
   const navigate = useNavigate();
 
   return (
-    <div className="relative w-full min-h-screen flex justify-center items-center">
+    <div
+      className="fixed inset-0 flex justify-center items-center"
+      style={{ zIndex: 0 }}
+    >
 
       <div
         className="relative flex justify-center
@@ -52,7 +55,7 @@ export default function GlassCutCard({ children }: Props) {
           <path d="M60 0 H400 Q440 0 440 40 Q440 95 500 95 H804 Q864 95 864 40 Q864 0 904 0 H1244 Q1304 0 1304 60 V740 Q1304 800 1244 800 H60 Q0 800 0 740 V60 Q0 0 60 0 Z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
         </svg>
 
-        {/* 2XL SVG (1700 × 800) — notch centered at x=850 */}
+        {/* 2XL SVG (1700 × 800) */}
         <svg className="absolute top-0 hidden 2xl:block" style={{ width:"100%", height:"100%" }} viewBox="0 0 1700 800" preserveAspectRatio="xMidYMid meet">
           <defs>
             <clipPath id="glassCut2Xl">
@@ -71,8 +74,21 @@ export default function GlassCutCard({ children }: Props) {
         {/* Fallback < lg */}
         <div className="absolute inset-0 lg:hidden bg-white/20 backdrop-blur-xl border border-white/20 rounded-3xl" />
 
-        {/* Dashboard Pill */}
-        <div className="absolute z-20" style={{ top:"18px", left:"50%", transform:"translateX(-50%)" }}>
+        {/* Dashboard Pill — locked inside notch per breakpoint */}
+        <div
+          className="
+            absolute z-20
+            mt-3
+            lg:mt-[22px]
+            xl:mt-[25px]
+            2xl:mt-[14px]
+          "
+          style={{
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
           <button
             onClick={() => navigate("/dashboardpage")}
             className="

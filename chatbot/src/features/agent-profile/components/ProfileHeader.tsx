@@ -4,78 +4,90 @@ type Props = {
   name: string;
   photo: string;
   verified?: boolean;
-  roleLabel?: string; // <-- new prop
+  roleLabel?: string;
 };
 
-export const ProfileHeader = ({ name, photo, verified, roleLabel = "Agent" }: Props) => {
-
+export const ProfileHeader = ({
+  name,
+  photo,
+  verified,
+  roleLabel = "Agent",
+}: Props) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [preview, setPreview] = useState(photo);
+  const [preview, setPreview] = useState<string>(
+    photo || "/src/assets/agents/default.png"
+  );
 
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handlePhotoClick = () => fileInputRef.current?.click();
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const imageUrl = URL.createObjectURL(file);
-    setPreview(imageUrl);
+    setPreview(URL.createObjectURL(file));
   };
 
   return (
     <div className="profile-header">
 
       {/* Banner */}
-      <div className="profile-banner">
-        <img src="/src/assets/agents/Bannar.png" className="cover-img" />
+      <img
+        src="/src/assets/agents/Bannar.png"
+        className="cover-img"
+        alt="Banner"
+      />
+
+      {/* Profile pic — absolutely positioned, bottom-anchored over the seam */}
+      <div className="profile-pic-wrapper" onClick={handlePhotoClick}>
+        <img src={preview} className="profile-pic" alt="Profile" />
+        <div className="profile-edit-overlay">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </div>
       </div>
 
-      {/* Info Card */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        hidden
+        onChange={handlePhotoChange}
+      />
+
+      {/* Info bar */}
       <div className="profile-info">
-
-        {/* LEFT SECTION */}
         <div className="profile-left">
-
-          {/* PROFILE IMAGE */}
-          <div
-            className="profile-pic-wrapper relative cursor-pointer group"
-            onClick={handlePhotoClick}
-          >
-            <img src={preview} className="profile-pic" />
-
-            {/* EDIT OVERLAY */}
-            <div className="profile-edit-overlay absolute flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-              <img src="/src/assets/icons/edit.png" className="w-6 h-6" />
-            </div>
-          </div>
-
-          {/* Hidden input */}
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            ref={fileInputRef}
-            onChange={handlePhotoChange}
-          />
-
-          {/* TEXT */}
+          {/* Spacer to push text past the profile pic */}
+          <div className="profile-pic-spacer" />
           <div className="profile-text">
             <h2>{name}</h2>
-            <p>{roleLabel}</p> {/* ✅ Dynamic role label instead of hardcoded "Agent" */}
+            <p>{roleLabel}</p>
           </div>
-
         </div>
 
-        {/* RIGHT SECTION */}
         <div className="profile-right">
           {verified && (
-            <img src="/src/assets/icons/verified.png" className="verified-icon" />
+            <img
+              src="/src/assets/icons/verified.png"
+              className="verified-icon"
+              alt="Verified"
+            />
           )}
-          <img src="/src/assets/icons/qr.png" className="qr-icon" />
+          <img src="/src/assets/icons/qr.png" className="qr-icon" alt="QR" />
         </div>
-
       </div>
+
     </div>
   );
 };

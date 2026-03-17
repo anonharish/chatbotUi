@@ -2,7 +2,7 @@ import GlassCutCard from "@/components/pages/GlassCutCardV2";
 import "@/features/agent-profile/agentProfile.css";
 
 import { useEffect, useState } from "react";
-import { fetchSettingProfile } from "@/features/agent-profile/services/agentProfile.service"; // ✅ Keshav's data
+import { fetchSettingProfile } from "@/features/agent-profile/services/agentProfile.service";
 import type { AgentProfile } from "@/features/agent-profile/types/agentProfile.types";
 
 import { useLocation } from "react-router-dom";
@@ -28,7 +28,8 @@ const ROLE_DISPLAY_LABELS: Record<string, string> = {
 
 const SettingProfilePage = (): JSX.Element | null => {
 
-  const [profile, setProfile] = useState<AgentProfile | null>(null); // ✅ own state for Keshav
+  const [profile, setProfile] = useState<AgentProfile | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   const location = useLocation();
   const locationState = location.state as LocationState | null;
@@ -36,7 +37,7 @@ const SettingProfilePage = (): JSX.Element | null => {
   const roleLabel = ROLE_DISPLAY_LABELS[roleFromState] ?? "Agent";
 
   useEffect(() => {
-    fetchSettingProfile().then(setProfile); // ✅ fetches Keshav's profile
+    fetchSettingProfile().then(setProfile);
   }, []);
 
   if (!profile) {
@@ -59,10 +60,16 @@ const SettingProfilePage = (): JSX.Element | null => {
         photo={profilePhoto}
         verified={profile.verified}
         roleLabel={roleLabel}
+        showEdit={true}
+        onEditProfile={() => setIsEditing(true)} 
       />
 
       {/* PROFILE DETAILS */}
-      <ProfileDetailsSection profile={profile} />
+      <ProfileDetailsSection
+        profile={profile}
+        isEditing={isEditing}
+        onSave={() => setIsEditing(false)}         
+      />
 
     </GlassCutCard>
   );
