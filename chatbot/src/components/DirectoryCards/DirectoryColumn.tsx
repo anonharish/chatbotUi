@@ -124,7 +124,7 @@ export default function DirectoryColumn({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-6">
+      <div className="flex-1  space-y-6">
         {localData.map((item, i) => {
 
           if (
