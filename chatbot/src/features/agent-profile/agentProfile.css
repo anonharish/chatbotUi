@@ -34,16 +34,15 @@
 
 /* ================= PROFILE IMAGE ================= */
 
-/* Shared absolute-positioned profile pic — works for both pages */
 .profile-pic-wrapper,
 .profile-pic-absolute {
   position: absolute;
   left: 20px;
-  bottom: 10px;           /* anchored to bottom of .profile-header — never drifts */
+  bottom: 10px;
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  overflow: hidden;
+  overflow: visible; /* ✅ allows badge to show outside circle */
   border: 5px solid white;
   background: #e5e7eb;
   cursor: pointer;
@@ -56,11 +55,11 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 50%;
+  border-radius: 50%; /* ✅ clips only the photo to circle */
+  overflow: hidden;
 }
 
-/* Edit Overlay */
-
+/* Edit Overlay — kept for legacy but not used in HeaderSection */
 .profile-edit-overlay {
   position: absolute;
   inset: 0;
@@ -75,10 +74,6 @@
   z-index: 2;
 }
 
-.profile-pic-wrapper:hover .profile-edit-overlay {
-  opacity: 1;
-}
-
 /* ================= PROFILE INFO BAR ================= */
 
 .profile-info {
@@ -88,10 +83,9 @@
   background: rgba(255, 255, 255, 0.9);
   border-radius: 0 0 20px 20px;
   padding: 12px 20px;
-  position: relative;      /* keeps profile-pic-wrapper/absolute in scope */
+  position: relative;
 }
 
-/* Spacer pushes text right past the profile pic */
 .profile-pic-spacer {
   width: 100px;
   flex-shrink: 0;
@@ -218,8 +212,6 @@
 .underline-field:focus {
   border-bottom: 2px solid #9ca3af;
 }
-
-/* Dropdown */
 
 select.underline-field {
   appearance: none;

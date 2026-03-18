@@ -6,7 +6,10 @@ type Props = {
   verified?: boolean;
   roleLabel?: string;
   showEdit?: boolean;
+  isEditing?: boolean;
   onEditProfile?: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
 };
 
 export const HeaderSection = ({
@@ -15,13 +18,15 @@ export const HeaderSection = ({
   verified,
   roleLabel = "Agent",
   showEdit = false,
+  isEditing = false,
   onEditProfile,
+  onSave,
+  onCancel,
 }: Props) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState<string>(
     photo || "/src/assets/agents/default.png"
   );
-  const [hovered, setHovered] = useState(false);
 
   const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -32,7 +37,6 @@ export const HeaderSection = ({
   };
 
   return (
-    // No inline <style> needed — all styles come from agentprofile.css
     <div className="profile-header">
 
       {/* Banner */}
@@ -42,26 +46,38 @@ export const HeaderSection = ({
         alt="Banner"
       />
 
-      {/* Profile pic — uses same .profile-pic-wrapper class as AgentProfile */}
-      <div
-        className="profile-pic-wrapper"
-        onClick={handlePhotoClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+      {/* Profile pic with edit badge at bottom-right */}
+      <div className="profile-pic-wrapper" style={{ cursor: "default" }}>
         <img src={preview} className="profile-pic" alt="Profile" />
+
+        {/* ✅ Edit badge — bottom-right like Google profile */}
         <div
-          className="profile-edit-overlay"
-          style={{ opacity: hovered ? 1 : 0 }}
+          onClick={handlePhotoClick}
+          style={{
+            position: "absolute",
+            bottom: 2,
+            right: 2,
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "#ffffff",
+            border: "2px solid #d1d5db",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 30,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.20)",
+          }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
-            strokeWidth="2"
+            stroke="#444"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -82,7 +98,6 @@ export const HeaderSection = ({
       {/* Info bar */}
       <div className="profile-info">
         <div className="profile-left">
-          {/* Spacer to push text past the profile pic */}
           <div className="profile-pic-spacer" />
           <div className="profile-text">
             <h2>{name}</h2>
@@ -91,7 +106,9 @@ export const HeaderSection = ({
         </div>
 
         <div className="profile-right">
-          {showEdit && (
+
+          {/* Edit icon — shown when NOT editing */}
+          {showEdit && !isEditing && (
             <button
               onClick={onEditProfile}
               className="edit-profile-btn"
@@ -113,6 +130,33 @@ export const HeaderSection = ({
               </svg>
             </button>
           )}
+
+          {/* Save + Cancel — shown when editing */}
+          {isEditing && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onCancel}
+                className="
+                  px-4 py-1.5 rounded-full border border-gray-400
+                  text-gray-600 text-xs font-medium
+                  hover:bg-gray-100 transition-colors
+                "
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onSave}
+                className="
+                  px-4 py-1.5 rounded-full
+                  bg-blue-600 text-white text-xs font-medium
+                  hover:bg-blue-700 transition-colors
+                "
+              >
+                Save
+              </button>
+            </div>
+          )}
+
           {verified && (
             <img
               src="/src/assets/icons/verified.png"

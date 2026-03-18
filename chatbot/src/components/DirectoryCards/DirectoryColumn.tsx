@@ -10,7 +10,6 @@ type Item = {
 };
 
 const baseCardStyle = `
-  bg-white
   w-[310px]
   h-[390px]
   rounded-[44px]
@@ -29,7 +28,6 @@ export default function DirectoryColumn({
   onItemClick?: (index: number) => void;
   selectedIndex?: number | null;
 }) {
-
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [localData, setLocalData] = useState<Item[]>(data);
@@ -42,28 +40,26 @@ export default function DirectoryColumn({
 
   if (variant === "roles") {
     return (
-      <Card className={`${baseCardStyle} p-6`}>
+      <Card
+        className={`${baseCardStyle} p-6`}
+        style={{ background: "#F3F3F5" }}
+      >
         <div className="space-y-6">
           {localData.map((item, i) => (
             <div key={i} className="relative space-y-3">
 
               {/* ICONS */}
               <div className="absolute top-0 right-0 flex gap-3">
-
-                {/* EDIT */}
                 <img
                   src="/src/assets/icons/edit.png"
                   className="w-4 h-4 cursor-pointer"
                   onClick={() => navigate("/agent-profile")}
                 />
-
-                {/* VIEW */}
                 <img
                   src="/src/assets/icons/view.png"
                   className="w-4 h-4 cursor-pointer"
                   onClick={() => navigate("/profile-info")}
                 />
-
               </div>
 
               <img
@@ -91,20 +87,41 @@ export default function DirectoryColumn({
   /* ================= OFFICERS / AGENTS CARD ================= */
 
   return (
-    <Card className={`${baseCardStyle} p-5`}>
+    <Card
+      className={`${baseCardStyle} p-5`}
+      style={{ background: "#F3F3F5" }}
+    >
 
-      {/* SEARCH */}
+      {/* SEARCH with icon */}
       <div className="mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={
-            variant === "officers"
-              ? "Search Field Officer"
-              : "Search Agents"
-          }
-          className="w-full bg-gray-100 rounded-full py-2 px-3 text-sm outline-none"
-        />
+        <div
+          className="flex items-center gap-2 w-full rounded-full py-2 px-4"
+          style={{ background: "#FFFFFF" }}
+        >
+          {/* Search Icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-4 h-4 text-gray-400 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              variant === "officers"
+                ? "Search Field Officer"
+                : "Search Agents"
+            }
+            className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-6">
@@ -125,42 +142,40 @@ export default function DirectoryColumn({
               onClick={() => {
                 if (variant === "officers" && onItemClick) onItemClick(i);
               }}
-              className={`flex items-center justify-between px-2 py-2 rounded-lg ${
+              className={`flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer ${
                 isSelected ? "bg-blue-50 border-2 border-blue-300" : ""
               }`}
             >
 
               <div className="flex items-center gap-3 flex-1">
-
                 <img
                   src={item.image}
                   className="w-10 h-10 rounded-full object-cover"
                 />
-
                 <div>
                   <p>{item.name}</p>
                   <p className="text-xs text-gray-500">{item.sub}</p>
                 </div>
-
               </div>
 
               {/* ICONS */}
               <div className="flex gap-3 ml-3">
-
-                {/* EDIT */}
                 <img
                   src="/src/assets/icons/edit.png"
                   className="w-4 h-4 cursor-pointer"
-                  onClick={() => navigate("/agent-profile")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/agent-profile");
+                  }}
                 />
-
-                {/* VIEW */}
                 <img
                   src="/src/assets/icons/view.png"
                   className="w-4 h-4 cursor-pointer"
-                  onClick={() => navigate("/profile-info")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/profile-info");
+                  }}
                 />
-
               </div>
 
             </div>

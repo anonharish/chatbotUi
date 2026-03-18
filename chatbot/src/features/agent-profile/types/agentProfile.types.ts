@@ -21,4 +21,5 @@ export interface AgentProfile {
 
   photo?: string;
   verified?: boolean;
+  role?: string; // ✅ added
 }

@@ -14,7 +14,8 @@ export const fetchAgentProfile = async (): Promise<AgentProfile> => {
     district: "West Godavari",
     pincode: "534211",
     photo: "/src/assets/agents/photo.png",
-    verified: true
+    verified: true,
+    role: "ro", // ✅ Ram is Regional Officer
   };
 };
 
@@ -32,7 +33,8 @@ export const fetchSettingProfile = async (): Promise<AgentProfile> => {
     panNumber: "FGHIJ5678K",
     district: "West Godavari",
     pincode: "534211",
-    photo: "/src/assets/agents/keshav.png",  // ✅ make sure this file exists
-    verified: true
+    photo: "/src/assets/agents/keshav.png",
+    verified: true,
+    role: "ro", // ✅ Keshav is Regional Officer — change as needed
   };
 };
