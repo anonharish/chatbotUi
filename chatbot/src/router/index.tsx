@@ -22,6 +22,7 @@ const DirectoryPage = lazy(() =>
   import('@/features/RoleManager/DirectoryPage'))
 const DashboardPage = lazy(() => import ('@/features/RoleManager/DashboardPage'))
 const DesignSystemPage = lazy(() => import ('@/pages/DesignSystemPage'))
+const SuperAdminDashboard = lazy(() => import('@/features/super-admin/SuperAdminDashboard'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -99,7 +100,11 @@ export const router = createBrowserRouter([
                     {
   path: "create-regions-areas",
   element: withSuspense(CreateRegionsAreas)
-}
+},
+{
+                        path: 'super-admin',
+                        element: withSuspense(SuperAdminDashboard)
+                    },
                 ]
             },
         ]
