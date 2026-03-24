@@ -30,6 +30,20 @@ const ProfileInfoPage = lazy(() => import("@/pages/ProfileInfoPage"));
 const SettingsProfilePage = lazy(() => import("@/pages/SettingsProfilePage"));
 const DesignSystemPage = lazy(() => import("@/pages/DesignSystemPage"));
 
+// Lazy load pages for optimal bundle splitting
+
+const ChatbotPage = lazy(() => import ('@/pages/chatbot/ChatbotPage'))
+const NotFoundPage = lazy(() => import ('@/pages/NotFoundPage'))
+const RegionSelectionPage = lazy(() => import ('@/pages/region-selection/RegionSelectionPage'))
+const MapboxPage = lazy(() => import ('@/pages/mapbox-region-selection/MapboxPage'))
+const DummyPage = lazy(() => import ('@/pages/DummyPage'))
+const DirectoryPage = lazy(() => 
+  import('@/features/RoleManager/DirectoryPage'))
+const DashboardPage = lazy(() => import ('@/features/RoleManager/DashboardPage'))
+const DesignSystemPage = lazy(() => import ('@/pages/DesignSystemPage'))
+const SuperAdminDashboard = lazy(() => import('@/features/super-admin/SuperAdminDashboard'))
+
+// Loading fallback component
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -98,6 +112,29 @@ export const router = createBrowserRouter([
                         path: 'design-system',
                         element: withSuspense(DesignSystemPage)
                     },
+                    {
+  path: "region-success",
+  element: withSuspense(RegionSuccessPage)
+},
+                    {
+  path: "create-regions-areas",
+  element: withSuspense(CreateRegionsAreas)
+},
+{
+                        path: 'super-admin',
+                        element: withSuspense(SuperAdminDashboard)
+                    },
+                ]
+            },
+        ]
+    }, {
+        path: '/404',
+        element: withSuspense(NotFoundPage)
+    }, {
+        path: '*',
+        element: <Navigate to="/404" replace/>
+    },
+])
                      {
             path: "agent-profile",
             element: withSuspense(AgentProfilePage),
