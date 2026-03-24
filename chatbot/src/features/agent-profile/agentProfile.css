@@ -1,18 +1,19 @@
+/* ================= PAGE ================= */
+
 .agent-profile-page {
   min-height: 100vh;
-  background-size: cover;
   display: flex;
   justify-content: center;
   padding: 40px 20px;
+  background-size: cover;
 }
 
 .agent-profile-container {
   width: 100%;
   max-width: 1100px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 30px;
   padding: 20px;
-  position: relative;
 }
 
 /* ================= HEADER ================= */
@@ -21,60 +22,137 @@
   position: relative;
 }
 
+/* Banner */
+
 .cover-img {
   width: 100%;
-  height: 220px;
+  height: 160px;
   object-fit: cover;
   border-radius: 20px 20px 0 0;
+  display: block;
 }
+
+/* ================= PROFILE IMAGE ================= */
+
+/* Shared absolute-positioned profile pic — works for both pages */
+.profile-pic-wrapper,
+.profile-pic-absolute {
+  position: absolute;
+  left: 20px;
+  bottom: 10px;           /* anchored to bottom of .profile-header — never drifts */
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 5px solid white;
+  background: #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+}
+
+.profile-pic {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+/* Edit Overlay */
+
+.profile-edit-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.profile-pic-wrapper:hover .profile-edit-overlay {
+  opacity: 1;
+}
+
+/* ================= PROFILE INFO BAR ================= */
 
 .profile-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255,255,255,0.9);
-  padding: 25px 30px;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 0 0 20px 20px;
-  margin-top: -40px;
+  padding: 12px 20px;
+  position: relative;      /* keeps profile-pic-wrapper/absolute in scope */
+}
+
+/* Spacer pushes text right past the profile pic */
+.profile-pic-spacer {
+  width: 100px;
+  flex-shrink: 0;
 }
 
 .profile-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
 }
 
-.profile-pic {
-  width: 197px;
-  height: 200px;
-  border-radius: 100px;
-  border: 8px solid white;
-  background: white;
-  margin-top: -80px;
+/* ================= PROFILE TEXT ================= */
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .profile-text h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .profile-text p {
   margin: 0;
   color: #6d6d6d;
+  font-size: 13px;
 }
+
+/* ================= RIGHT ICONS ================= */
 
 .profile-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .verified-icon {
-  width: 55px;
+  width: 36px;
 }
 
 .qr-icon {
-  width: 45px;
+  width: 32px;
+}
+
+.edit-profile-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.edit-profile-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* ================= SECTIONS ================= */
@@ -92,9 +170,11 @@
   color: #444;
 }
 
+/* Grid Layout */
+
 .grid-2 {
   display: grid;
-  grid-template-columns: repeat(2,1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -122,11 +202,7 @@
   margin: 20px 0;
 }
 
-.form-grid {
-  row-gap: 25px;
-}
-
-/* ================= INLINE EDIT FIELDS ================= */
+/* ================= FORM FIELDS ================= */
 
 .underline-field {
   width: 100%;
@@ -136,39 +212,24 @@
   padding: 6px 0;
   font-weight: 500;
   outline: none;
-  box-shadow: none;
   font-size: 14px;
 }
 
-/* On click → underline highlight only */
 .underline-field:focus {
-  outline: none;
-  box-shadow: none;
   border-bottom: 2px solid #9ca3af;
 }
 
-/* Remove browser blue glow */
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
+/* Dropdown */
 
-/* Make select look like input */
 select.underline-field {
   appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
   background: transparent;
 }
 
-/* Dropdown container */
 .dropdown-field {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: transparent;
 }
 
 .dropdown-icon {
@@ -176,7 +237,7 @@ select.underline-field {
   color: #888;
 }
 
-/* ================= GREEN OFFICER TEXT ================= */
+/* ================= OFFICER TEXT ================= */
 
 .officer {
   color: #2fa84f;
@@ -201,4 +262,122 @@ select.underline-field {
   border-radius: 8px;
   font-size: 12px;
   background: #fafafa;
+}
+
+/* ================= RESPONSIVE — lg (1024px) ================= */
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .cover-img {
+    height: 185px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .profile-info {
+    padding: 14px 24px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .profile-pic-wrapper,
+  .profile-pic-absolute {
+    width: 110px;
+    height: 110px;
+    left: 24px;
+    bottom: 12px;
+    border-width: 6px;
+  }
+
+  .profile-pic-spacer {
+    width: 126px;
+  }
+
+  .profile-left {
+    gap: 16px;
+  }
+
+  .profile-text h2 {
+    font-size: 17px;
+  }
+
+  .profile-text p {
+    font-size: 13px;
+  }
+
+  .profile-right {
+    gap: 12px;
+  }
+
+  .verified-icon {
+    width: 42px;
+  }
+
+  .qr-icon {
+    width: 36px;
+  }
+}
+
+/* ================= RESPONSIVE — xl (1280px+) ================= */
+
+@media (min-width: 1280px) {
+  .cover-img {
+    height: 220px;
+  }
+
+  .profile-info {
+    padding: 16px 30px;
+  }
+
+  .profile-pic-wrapper,
+  .profile-pic-absolute {
+    width: 130px;
+    height: 130px;
+    left: 30px;
+    bottom: 14px;
+    border-width: 7px;
+  }
+
+  .profile-pic-spacer {
+    width: 150px;
+  }
+
+  .profile-left {
+    gap: 20px;
+  }
+
+  .profile-text h2 {
+    font-size: 20px;
+  }
+
+  .profile-text p {
+    font-size: 14px;
+  }
+
+  .profile-right {
+    gap: 14px;
+  }
+
+  .verified-icon {
+    width: 50px;
+  }
+
+  .qr-icon {
+    width: 42px;
+  }
+}
+
+/* ================= RESPONSIVE — mobile (<1024px) ================= */
+
+@media (max-width: 1023px) {
+  .profile-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profile-right {
+    align-self: flex-end;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
