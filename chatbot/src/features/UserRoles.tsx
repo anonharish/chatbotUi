@@ -2,11 +2,19 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { roleCards } from "@/data/directoryData";
 
+// ✅ Maps card title to short role key used in SettingProfilePage
+const ROLE_KEY_MAP: Record<string, string> = {
+  "regional officer":      "ro",
+  "intelligence officer":  "io",
+  "field officer":         "fo",
+  "agent":                 "agent",
+};
+
 export default function UserRoles() {
   const navigate = useNavigate();
 
   const handleRoleClick = (role: string) => {
-    const formattedRole = role.toLowerCase();
+    const formattedRole = ROLE_KEY_MAP[role.toLowerCase()] ?? "agent";
     navigate("/agent-profile", {
       state: { role: formattedRole }
     });
@@ -75,7 +83,7 @@ export default function UserRoles() {
         {/* Fallback < lg */}
         <div className="absolute inset-0 lg:hidden bg-white/20 backdrop-blur-xl border border-white/20 rounded-3xl" />
 
-        {/* Dashboard Pill */}
+        {/* Directory Pill */}
         <div className="absolute z-20" style={{ top:"18px", left:"50%", transform:"translateX(-50%)" }}>
           <button
             onClick={() => navigate("/directory")}
@@ -116,7 +124,7 @@ export default function UserRoles() {
                   className="group cursor-pointer relative hover:scale-105 transition-transform w-full"
                   style={{ overflow: "visible" }}
                 >
-                  {/* Card — glass background */}
+                  {/* Card */}
                   <div
                     className="relative w-full rounded-[24px] lg:rounded-[28px] xl:rounded-[32px] 2xl:rounded-[36px] border border-white/30 overflow-hidden"
                     style={{
@@ -126,7 +134,7 @@ export default function UserRoles() {
                       WebkitBackdropFilter: "blur(12px)",
                     }}
                   >
-                    {/* Character image — top 70%, slightly overflows upward */}
+                    {/* Character image */}
                     <div
                       className="absolute left-0 right-0 flex justify-center items-end"
                       style={{ top: "-6%", height: "72%", zIndex: 10 }}
@@ -138,32 +146,27 @@ export default function UserRoles() {
                       />
                     </div>
 
-                    {/* White bottom section with concave top-left curve */}
+                    {/* White bottom section */}
                     <div
                       className="absolute bottom-0 left-0 right-0"
                       style={{ height: "32%", zIndex: 20 }}
                     >
-                      {/* SVG: concave inward bite at top-left corner */}
                       <svg
                         viewBox="0 0 300 200"
                         preserveAspectRatio="none"
                         className="absolute inset-0 w-full h-full"
                       >
-                        <path
-                          d="M70 0 Q0 0 0 70 V200 H300 V0 Z"
-                          fill="white"
-                        />
+                        <path d="M70 0 Q0 0 0 70 V200 H300 V0 Z" fill="white" />
                       </svg>
 
-                      {/* Text content */}
                       <div
                         className="absolute inset-0 flex flex-col"
                         style={{
-                          paddingTop: "clamp(14px, 1.6vw, 26px)",
-                          paddingLeft: "clamp(12px, 1.4vw, 24px)",
-                          paddingRight: "clamp(12px, 1.4vw, 24px)",
+                          paddingTop:    "clamp(14px, 1.6vw, 26px)",
+                          paddingLeft:   "clamp(12px, 1.4vw, 24px)",
+                          paddingRight:  "clamp(12px, 1.4vw, 24px)",
                           paddingBottom: "clamp(10px, 1.2vw, 18px)",
-                          gap: "clamp(4px, 0.5vw, 8px)",
+                          gap:           "clamp(4px, 0.5vw, 8px)",
                         }}
                       >
                         <h3

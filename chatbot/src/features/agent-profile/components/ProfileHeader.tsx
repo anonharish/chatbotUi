@@ -36,18 +36,38 @@ export const ProfileHeader = ({
         alt="Banner"
       />
 
-      {/* Profile pic — absolutely positioned, bottom-anchored over the seam */}
-      <div className="profile-pic-wrapper" onClick={handlePhotoClick}>
+      {/* Profile pic with edit badge at bottom-right */}
+      <div className="profile-pic-wrapper" style={{ cursor: "default" }}>
         <img src={preview} className="profile-pic" alt="Profile" />
-        <div className="profile-edit-overlay">
+
+        {/* ✅ Edit badge — bottom-right like Google profile */}
+        <div
+          onClick={handlePhotoClick}
+          style={{
+            position: "absolute",
+            bottom: 2,
+            right: 2,
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "#ffffff",
+            border: "2px solid #d1d5db",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 30,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.20)",
+          }}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
-            strokeWidth="2"
+            stroke="#444"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
@@ -68,7 +88,6 @@ export const ProfileHeader = ({
       {/* Info bar */}
       <div className="profile-info">
         <div className="profile-left">
-          {/* Spacer to push text past the profile pic */}
           <div className="profile-pic-spacer" />
           <div className="profile-text">
             <h2>{name}</h2>
