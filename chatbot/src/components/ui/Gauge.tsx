@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function Gauge({ value = 78 }) {
   const totalTicks = 40;
   const sweepAngle = 260;        // controls arc width

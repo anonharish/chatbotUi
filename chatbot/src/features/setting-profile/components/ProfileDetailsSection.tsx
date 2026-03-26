@@ -5,11 +5,11 @@ import AlertsSection from "./AlertsSection";
 type Props = {
   profile: AgentProfile;
   isEditing?: boolean;
-  onSave?: () => void;
+  onSave?: (updatedProfile: Partial<AgentProfile>) => void;
   onCancel?: () => void;
 };
 
-// ✅ Moved OUTSIDE the component — prevents re-mount on every keystroke
+// ✅ Read Field
 const ReadField = ({
   label,
   value,
@@ -27,7 +27,7 @@ const ReadField = ({
   </div>
 );
 
-// ✅ Moved OUTSIDE the component — prevents focus loss on every keystroke
+// ✅ Edit Field
 const EditField = ({
   label,
   value,
@@ -74,7 +74,7 @@ export default function ProfileDetailsSection({
     phone:     profile.phone,
   });
 
-  // ✅ Reset edited fields to original when editing is turned off
+  // Reset when editing turns off
   useEffect(() => {
     if (!isEditing) {
       setEditedProfile({
@@ -88,6 +88,14 @@ export default function ProfileDetailsSection({
 
   const handleChange = (field: string, value: string) => {
     setEditedProfile((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = () => {
+    onSave?.(editedProfile);
+  };
+
+  const handleCancel = () => {
+    onCancel?.();
   };
 
   return (
@@ -140,6 +148,25 @@ export default function ProfileDetailsSection({
 
       {/* ALERTS */}
       <AlertsSection />
+
+      {/* ✅ ACTION BUTTONS */}
+      {isEditing && (
+        <div className="flex justify-end gap-4 mt-6">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 rounded-md border border-gray-400 text-gray-700 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      )}
 
     </div>
   );

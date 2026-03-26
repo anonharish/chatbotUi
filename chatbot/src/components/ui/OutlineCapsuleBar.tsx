@@ -1,6 +1,3 @@
-import React from "react";
-
-
 const OutlineCapsuleBar = (props: any) => {
   const { x, y, width, height } = props;
 
