@@ -1,5 +1,10 @@
 import { Button } from '@/components/ui/button'
-import type { INavItem } from './nav.config'
+
+interface INavItem {
+    icon: any
+    label: string
+    path: string
+}
 
 interface NavItemProps {
     item: INavItem
@@ -8,6 +13,9 @@ interface NavItemProps {
 }
 
 export function NavItem({ item, isActive, onClick }: NavItemProps) {
+    const Icon = item.icon
+    const isLucideIcon = typeof Icon === 'function'
+
     return (
         <Button
             variant="ghost"
@@ -19,12 +27,18 @@ export function NavItem({ item, isActive, onClick }: NavItemProps) {
             onClick={onClick}
             title={item.label}
         >
-            <img
-                src={item.icon}
-                alt={item.label}
-                className={`h-6 w-6 transition-colors duration-300 ${isActive ? 'brightness-100 sepia-0 hue-rotate-[50deg] saturate-[500%]' : ''}`}
-                style={isActive ? { filter: 'drop-shadow(0 0 2px rgba(228,255,125,0.5))' } : {}}
-            />
+            {isLucideIcon ? (
+                <Icon
+                    className={`h-6 w-6 transition-colors duration-300 ${isActive ? 'text-brand-lime' : 'text-white'}`}
+                />
+            ) : (
+                <img
+                    src={Icon}
+                    alt={item.label}
+                    className={`h-6 w-6 transition-colors duration-300 ${isActive ? 'brightness-100 sepia-0 hue-rotate-[50deg] saturate-[500%]' : ''}`}
+                    style={isActive ? { filter: 'drop-shadow(0 0 2px rgba(228,255,125,0.5))' } : {}}
+                />
+            )}
         </Button>
     )
 }

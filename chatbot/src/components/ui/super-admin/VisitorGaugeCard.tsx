@@ -13,10 +13,12 @@ interface GaugeProps {
 // ─── Segmented Speedometer Gauge ──────────────────────────────────────────────
 const SemiGauge: React.FC<GaugeProps> = ({ percentage, label }) => {
   const cx = 80;
-  const cy = 78;
-  const innerR = 42;
-  const outerR = 62;
-  const totalTicks = 28;
+const cy = 74;      // 🔥 move slightly up (was 78)
+
+const innerR = 48;  // 🔥 bigger inner radius
+const outerR = 60;  // 🔥 slightly shorter ticks
+
+const totalTicks = 32; // 🔥 more ticks (denser like figma)
   const filledTicks = Math.round((percentage / 100) * totalTicks);
 
   // Ticks spread from 180° → 0° (left to right across the top)
@@ -42,18 +44,20 @@ const SemiGauge: React.FC<GaugeProps> = ({ percentage, label }) => {
   // Pointer triangle at the percentage position
   const pointerAngle = startAngle - (percentage / 100) * angleRange;
   const pointerRad   = (pointerAngle * Math.PI) / 180;
-  const pointerR     = innerR - 6;
+  const pointerR     = innerR - 8;
   const px = cx + pointerR * Math.cos(pointerRad);
   const py = cy - pointerR * Math.sin(pointerRad);
 
   // small triangle pointing outward
   const perpRad = pointerRad + Math.PI / 2;
-  const tipX  = px + 6  * Math.cos(pointerRad);
-  const tipY  = py - 6  * Math.sin(pointerRad);
-  const base1X = px + 4 * Math.cos(perpRad);
-  const base1Y = py - 4 * Math.sin(perpRad);
-  const base2X = px - 4 * Math.cos(perpRad);
-  const base2Y = py + 4 * Math.sin(perpRad);
+  const tipX  = px + 4 * Math.cos(pointerRad);
+const tipY  = py - 4 * Math.sin(pointerRad);
+
+const base1X = px + 3 * Math.cos(perpRad);
+const base1Y = py - 3 * Math.sin(perpRad);
+
+const base2X = px - 3 * Math.cos(perpRad);
+const base2Y = py + 3 * Math.sin(perpRad);
 
   return (
     <div className="flex flex-col items-center">
@@ -68,28 +72,28 @@ const SemiGauge: React.FC<GaugeProps> = ({ percentage, label }) => {
           {/* Tick marks */}
           {ticks.map((tick, i) => (
             <line
-              key={i}
-              x1={tick.x1}
-              y1={tick.y1}
-              x2={tick.x2}
-              y2={tick.y2}
-              stroke={
-                tick.isFilled
-                  ? "rgba(255,255,255,0.90)"
-                  : "rgba(255,255,255,0.18)"
-              }
-              strokeWidth="5"
-              strokeLinecap="round"
-            />
+  key={i}
+  x1={tick.x1}
+  y1={tick.y1}
+  x2={tick.x2}
+  y2={tick.y2}
+  stroke={
+    tick.isFilled
+      ? "rgba(255,255,255,0.95)"
+      : "rgba(255,255,255,0.12)"
+  }
+  strokeWidth="3.2"   // 🔥 thinner ticks
+  strokeLinecap="round"
+/>
           ))}
 
           {/* Inner arc (thin white line) */}
           <path
-            d={`M ${cx - innerR} ${cy} A ${innerR} ${innerR} 0 0 1 ${cx + innerR} ${cy}`}
-            stroke="rgba(255,255,255,0.30)"
-            strokeWidth="1"
-            fill="none"
-          />
+  d={`M ${cx - innerR} ${cy} A ${innerR} ${innerR} 0 0 1 ${cx + innerR} ${cy}`}
+  stroke="rgba(255,255,255,0.22)"
+  strokeWidth="1"
+  fill="none"
+/>
 
           {/* Pointer triangle */}
           <polygon
@@ -99,14 +103,13 @@ const SemiGauge: React.FC<GaugeProps> = ({ percentage, label }) => {
 
           {/* Percentage text */}
           <text
-            x={cx}
-            y={cy - 4}
-            textAnchor="middle"
-            fill="white"
-            fontFamily="Outfit, sans-serif"
-            fontWeight="700"
-            fontSize="22"
-          >
+  x={cx}
+  y={cy - 6}   // 🔥 move slightly up
+  textAnchor="middle"
+  fill="white"
+  fontWeight="700"
+  fontSize="24"
+>
             {percentage}%
           </text>
         </svg>
