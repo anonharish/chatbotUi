@@ -10,6 +10,7 @@ import UserRoles from "@/features/UserRoles";
 import CreateRegionsAreas from "@/components/pages/CreateRegionsAreas";
 import RegionSuccessPage from "@/components/pages/RegionSuccessPage";
 
+// ✅ KEEP ONLY THIS BLOCK (removed duplicate block below)
 const ChatbotPage = lazy(() => import("@/pages/chatbot/ChatbotPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 const RegionSelectionPage = lazy(
@@ -29,19 +30,10 @@ const AgentProfilePage = lazy(() => import("@/pages/AgentProfilePage"));
 const ProfileInfoPage = lazy(() => import("@/pages/ProfileInfoPage"));
 const SettingsProfilePage = lazy(() => import("@/pages/SettingsProfilePage"));
 const DesignSystemPage = lazy(() => import("@/pages/DesignSystemPage"));
-
-// Lazy load pages for optimal bundle splitting
-
-const ChatbotPage = lazy(() => import ('@/pages/chatbot/ChatbotPage'))
-const NotFoundPage = lazy(() => import ('@/pages/NotFoundPage'))
-const RegionSelectionPage = lazy(() => import ('@/pages/region-selection/RegionSelectionPage'))
-const MapboxPage = lazy(() => import ('@/pages/mapbox-region-selection/MapboxPage'))
-const DummyPage = lazy(() => import ('@/pages/DummyPage'))
-const DirectoryPage = lazy(() => 
-  import('@/features/RoleManager/DirectoryPage'))
-const DashboardPage = lazy(() => import ('@/features/RoleManager/DashboardPage'))
-const DesignSystemPage = lazy(() => import ('@/pages/DesignSystemPage'))
-const SuperAdminDashboard = lazy(() => import('@/features/super-admin/SuperAdminDashboard'))
+const SuperAdminDashboard = lazy(() =>
+  import("@/features/super-admin/SuperAdminDashboard"),
+);
+const FarmlandOverviewPage = lazy(() => import("@/pages/FarmlandOverviewPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -65,77 +57,73 @@ export const router = createBrowserRouter([
         path: "/",
         element: <Navigate to="/dashboardpage" replace />,
       },
-       {
-                element: <AuthLayout/>,
-                children: [
-                    {
-                        path: 'login',
-                        element: <LoginPage/>
-                    },
-                ]
-            }, 
-            {
-                element: <MainLayout/>,
-                children: [
-                    {
-                        path: 'dashboard',
-                        element: withSuspense(MapboxPage)
-                    },
-                    {
-                        path: 'region-selection',
-                        element: withSuspense(RegionSelectionPage)
-                    },
-                    {
-                        path: 'mapbox-region-selection',
-                        element: withSuspense(MapboxPage)
-                    },
-                    {
-                        path: 'dummy',
-                        element: withSuspense(DummyPage)
-                    }, {
-                        path: 'chat',
-                        element: withSuspense(ChatbotPage)
-                    }, {
-                        path: 'dashboardpage',
-                        element: withSuspense(DashboardPage)
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "login",
+            element: <LoginPage />,
+          },
+        ],
+      },
+      {
+        element: <MainLayout />,
+        children: [
+          {
+            path: "dashboard",
+            element: withSuspense(MapboxPage),
+          },
+          {
+            path: "region-selection",
+            element: withSuspense(RegionSelectionPage),
+          },
+          {
+            path: "mapbox-region-selection",
+            element: withSuspense(MapboxPage),
+          },
+          {
+            path: "dummy",
+            element: withSuspense(DummyPage),
+          },
+          {
+            path: "chat",
+            element: withSuspense(ChatbotPage),
+          },
+          {
+            path: "dashboardpage",
+            element: withSuspense(DashboardPage),
+          },
+          {
+            path: "card-preview",
+            element: withSuspense(CardPreviewPage),
+          },
+          {
+            path: "directory",
+            element: withSuspense(DirectoryPage),
+          },
+          {
+            path: "UserRoles",
+            element: withSuspense(UserRoles),
+          },
+          {
+            path: "design-system",
+            element: withSuspense(DesignSystemPage),
+          },
+          {
+            path: "region-success",
+            element: withSuspense(RegionSuccessPage),
+          },
+          {
+            path: "create-regions-areas",
+            element: withSuspense(CreateRegionsAreas),
+          },
+          {
+            path: "super-admin",
+            element: withSuspense(SuperAdminDashboard),
+          },
 
-                    }, {
-                        path: 'card-preview',
-                        element: withSuspense(CardPreviewPage)
-                    }, {
-                        path: "directory",
-                        element: withSuspense(DirectoryPage)
-                    }, {
-                        path: "UserRoles",
-                        element: withSuspense(UserRoles)
-                    }, {
-                        path: 'design-system',
-                        element: withSuspense(DesignSystemPage)
-                    },
-                    {
-  path: "region-success",
-  element: withSuspense(RegionSuccessPage)
-},
-                    {
-  path: "create-regions-areas",
-  element: withSuspense(CreateRegionsAreas)
-},
-{
-                        path: 'super-admin',
-                        element: withSuspense(SuperAdminDashboard)
-                    },
-                ]
-            },
-        ]
-    }, {
-        path: '/404',
-        element: withSuspense(NotFoundPage)
-    }, {
-        path: '*',
-        element: <Navigate to="/404" replace/>
-    },
-])
-                     {
+          // ✅ FIX: moved inside children (was outside → syntax error)
+          {
             path: "agent-profile",
             element: withSuspense(AgentProfilePage),
           },
@@ -148,12 +136,8 @@ export const router = createBrowserRouter([
             element: withSuspense(SettingsProfilePage),
           },
           {
-            path: "region-success",
-            element: withSuspense(RegionSuccessPage),
-          },
-          {
-            path: "create-regions-areas",
-            element: withSuspense(CreateRegionsAreas),
+            path: "farm-land",
+            element: withSuspense(FarmlandOverviewPage),
           },
         ],
       },
