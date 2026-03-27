@@ -1,4 +1,4 @@
-import { FarmlandOverviewSection } from "@/components/ui/super-admin/Farmland/components";
+import { FarmlandOverviewSection } from "@/features/Farmland/components";
 
 export default function FarmlandOverviewPage() {
   return <FarmlandOverviewSection />;

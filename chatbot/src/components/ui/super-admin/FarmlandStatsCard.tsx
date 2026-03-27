@@ -1,7 +1,5 @@
 import React from "react";
 
-// ❌ REMOVED IMAGE IMPORTS (they caused error)
-
 // ─── Icons ─────────────────────────────────────────────────────────
 const TotalIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
@@ -63,19 +61,16 @@ const FarmlandStatsCard: React.FC<FarmlandStatsCardProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full backdrop-blur-md bg-white/10 overflow-hidden ${className}`}
-      style={{
-        borderRadius: "37.56px",
-        border: "1.71px solid rgba(255,255,255,0.22)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-      }}
+      className={`
+        relative w-full h-full overflow-hidden
+        backdrop-blur-md bg-white/10
+        rounded-[38px]
+        border border-white/20
+        shadow-[0_8px_32px_rgba(0,0,0,0.18)]
+        ${className}
+      `}
     >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.03) 100%)",
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/10 to-white/5" />
 
       {stats.map((stat, i) => {
         const rowTop = i * ROW_HEIGHT;
@@ -83,31 +78,25 @@ const FarmlandStatsCard: React.FC<FarmlandStatsCardProps> = ({
         return (
           <div
             key={i}
-            className="absolute"
-            style={{
-              top: `${rowTop}px`,
-              left: 0,
-              right: 0,
-              height: `${ROW_HEIGHT}px`,
-            }}
+            className="absolute left-0 right-0 h-[104px]"
+            style={{ top: `${rowTop}px` }} // unavoidable dynamic
           >
             <div
-              className={`absolute flex items-center justify-center rounded-2xl ${stat.iconBg}`}
-              style={{
-                width: "50px",
-                height: "50px",
-                top: `${(ROW_HEIGHT - 50) / 2}px`,
-                left: "19px",
-              }}
+              className={`
+                absolute flex items-center justify-center rounded-2xl
+                w-[50px] h-[50px] left-[19px]
+                top-1/2 -translate-y-1/2
+                ${stat.iconBg}
+              `}
             >
               {stat.icon}
             </div>
 
-            <p className="absolute text-white/60" style={{ top: "35px", left: "80px" }}>
+            <p className="absolute text-white/60 left-[80px] top-[35px] text-sm">
               {stat.label}
             </p>
 
-            <p className="absolute text-white font-bold" style={{ top: "54px", left: "80px" }}>
+            <p className="absolute text-white font-bold left-[80px] top-[54px] text-base">
               {stat.value}
             </p>
           </div>

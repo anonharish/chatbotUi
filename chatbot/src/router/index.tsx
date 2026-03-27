@@ -34,6 +34,8 @@ const SuperAdminDashboard = lazy(() =>
   import("@/features/super-admin/SuperAdminDashboard"),
 );
 const FarmlandOverviewPage = lazy(() => import("@/pages/FarmlandOverviewPage"));
+const FarmlandDashboardPage = lazy(() => import("@/pages/FarmlandDashboardPage"));
+
 
 // Loading fallback component
 const PageLoader = () => (
@@ -138,6 +140,11 @@ export const router = createBrowserRouter([
           {
             path: "farm-land",
             element: withSuspense(FarmlandOverviewPage),
+          },
+          {
+            path: "farmland-components",
+            element: withSuspense(FarmlandDashboardPage),
+
           },
         ],
       },
