@@ -125,5 +125,38 @@ export const router = createBrowserRouter([
         element: <Navigate to="/404" replace />,
     },
 ])
+                     {
+            path: "agent-profile",
+            element: withSuspense(AgentProfilePage),
+          },
+          {
+            path: "profile-info",
+            element: withSuspense(ProfileInfoPage),
+          },
+          {
+            path: "settings-profile",
+            element: withSuspense(SettingsProfilePage),
+          },
+          {
+            path: "region-success",
+            element: withSuspense(RegionSuccessPage),
+          },
+          {
+            path: "create-regions-areas",
+            element: withSuspense(CreateRegionsAreas),
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: "/404",
+    element: withSuspense(NotFoundPage),
+  },
+  {
+    path: "*",
+    element: <Navigate to="/404" replace />,
+  },
+]);
 
 export default router

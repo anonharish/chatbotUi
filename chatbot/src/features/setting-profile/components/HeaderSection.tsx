@@ -5,13 +5,23 @@ type Props = {
   photo: string;
   verified?: boolean;
   roleLabel?: string;
+  showEdit?: boolean;
+  isEditing?: boolean;
+  onEditProfile?: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
 };
 
-export const ProfileHeader = ({
+export const HeaderSection = ({
   name,
   photo,
   verified,
   roleLabel = "Agent",
+  showEdit = false,
+  isEditing = false,
+  onEditProfile,
+  onSave,
+  onCancel,
 }: Props) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState<string>(
@@ -96,6 +106,57 @@ export const ProfileHeader = ({
         </div>
 
         <div className="profile-right">
+
+          {/* Edit icon — shown when NOT editing */}
+          {showEdit && !isEditing && (
+            <button
+              onClick={onEditProfile}
+              className="edit-profile-btn"
+              aria-label="Edit profile"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#555"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Save + Cancel — shown when editing */}
+          {isEditing && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onCancel}
+                className="
+                  px-4 py-1.5 rounded-full border border-gray-400
+                  text-gray-600 text-xs font-medium
+                  hover:bg-gray-100 transition-colors
+                "
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onSave}
+                className="
+                  px-4 py-1.5 rounded-full
+                  bg-blue-600 text-white text-xs font-medium
+                  hover:bg-blue-700 transition-colors
+                "
+              >
+                Save
+              </button>
+            </div>
+          )}
+
           {verified && (
             <img
               src="/src/assets/icons/verified.png"

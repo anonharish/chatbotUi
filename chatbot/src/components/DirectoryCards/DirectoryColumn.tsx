@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 type Item = {
   name: string;
@@ -9,7 +10,6 @@ type Item = {
 };
 
 const baseCardStyle = `
-  bg-white
   w-[310px]
   h-[390px]
   rounded-[44px]
@@ -28,51 +28,38 @@ export default function DirectoryColumn({
   onItemClick?: (index: number) => void;
   selectedIndex?: number | null;
 }) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
-
   const [localData, setLocalData] = useState<Item[]>(data);
 
   useEffect(() => {
     setLocalData(data);
   }, [data]);
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editedItem, setEditedItem] = useState<Item | null>(null);
+  /* ================= ROLES CARD ================= */
 
-
-  const startEdit = (e: React.MouseEvent, item: Item, index: number) => {
-    e.stopPropagation();
-    setEditingIndex(index);
-    setEditedItem({ ...item });
-  };
-
-  const saveEdit = () => {
-    if (editingIndex === null || !editedItem) return;
-
-    const updated = [...localData];
-    updated[editingIndex] = editedItem;
-
-    setLocalData(updated);
-    setEditingIndex(null);
-    setEditedItem(null);
-  };
-
-  
   if (variant === "roles") {
     return (
-      <Card className={`${baseCardStyle} p-6`}>
+      <Card
+        className={`${baseCardStyle} p-6`}
+        style={{ background: "#F3F3F5" }}
+      >
         <div className="space-y-6">
           {localData.map((item, i) => (
             <div key={i} className="relative space-y-3">
 
-          
+              {/* ICONS */}
               <div className="absolute top-0 right-0 flex gap-3">
                 <img
                   src="/src/assets/icons/edit.png"
                   className="w-4 h-4 cursor-pointer"
-                  onClick={(e) => startEdit(e, item, i)}
+                  onClick={() => navigate("/agent-profile")}
                 />
-                <img src="/src/assets/icons/view.png" className="w-4 h-4 cursor-pointer" />
+                <img
+                  src="/src/assets/icons/view.png"
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={() => navigate("/profile-info")}
+                />
               </div>
 
               <img
@@ -80,38 +67,16 @@ export default function DirectoryColumn({
                 className="w-14 h-14 rounded-full object-cover"
               />
 
-              {editingIndex === i ? (
-                <>
-                  <input
-                    value={editedItem?.name}
-                    onChange={(e) =>
-                      setEditedItem({ ...editedItem!, name: e.target.value })
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                    className="border rounded px-2 py-1 w-full"
-                    autoFocus
-                  />
-
-                  <input
-                    value={editedItem?.sub}
-                    onChange={(e) =>
-                      setEditedItem({ ...editedItem!, sub: e.target.value })
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </>
-              ) : (
-                <div className="text-sm">
-                  <p>{item.name}</p>
-                  <p>{item.sub}</p>
-                  <p>Contact - {item.contact}</p>
-                </div>
-              )}
+              <div className="text-sm">
+                <p>{item.name}</p>
+                <p>{item.sub}</p>
+                <p>Contact - {item.contact}</p>
+              </div>
 
               {i !== localData.length - 1 && (
                 <div className="h-[3px] bg-gray-200 mt-10" />
               )}
+
             </div>
           ))}
         </div>
@@ -119,24 +84,49 @@ export default function DirectoryColumn({
     );
   }
 
+  /* ================= OFFICERS / AGENTS CARD ================= */
+
   return (
-    <Card className={`${baseCardStyle} p-5`}>
-      {/* SEARCH */}
+    <Card
+      className={`${baseCardStyle} p-5`}
+      style={{ background: "#F3F3F5" }}
+    >
+
+      {/* SEARCH with icon */}
       <div className="mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={
-            variant === "officers"
-              ? "Search Field Officer"
-              : "Search Agents"
-          }
-          className="w-full bg-gray-100 rounded-full py-2 px-3 text-sm outline-none"
-        />
+        <div
+          className="flex items-center gap-2 w-full rounded-full py-2 px-4"
+          style={{ background: "#FFFFFF" }}
+        >
+          {/* Search Icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-4 h-4 text-gray-400 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              variant === "officers"
+                ? "Search Field Officer"
+                : "Search Agents"
+            }
+            className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+          />
+        </div>
       </div>
 
       <div className="flex-1  space-y-6">
         {localData.map((item, i) => {
+
           if (
             search &&
             !item.name.toLowerCase().includes(search.toLowerCase())
@@ -152,7 +142,7 @@ export default function DirectoryColumn({
               onClick={() => {
                 if (variant === "officers" && onItemClick) onItemClick(i);
               }}
-              className={`flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer${
+              className={`flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer ${
                 isSelected ? "bg-blue-50 border-2 border-blue-300" : ""
               }`}
             >
@@ -162,53 +152,37 @@ export default function DirectoryColumn({
                   src={item.image}
                   className="w-10 h-10 rounded-full object-cover"
                 />
-
-                {editingIndex === i ? (
-                  <div className="flex flex-col gap-1 w-full">
-                    <input
-                      value={editedItem?.name}
-                      onChange={(e) =>
-                        setEditedItem({ ...editedItem!, name: e.target.value })
-                      }
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                      className="border rounded px-2 py-1"
-                      autoFocus
-                    />
-
-                    <input
-                      value={editedItem?.sub}
-                      onChange={(e) =>
-                        setEditedItem({ ...editedItem!, sub: e.target.value })
-                      }
-                      onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                      className="border rounded px-2 py-1"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <p>{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.sub}</p>
-                  </div>
-                )}
+                <div>
+                  <p>{item.name}</p>
+                  <p className="text-xs text-gray-500">{item.sub}</p>
+                </div>
               </div>
 
-              {editingIndex !== i && (
-                <div className="flex gap-3 ml-3">
-                  <img
-                    src="/src/assets/icons/edit.png"
-                    className="w-4 h-4 cursor-pointer"
-                    onClick={(e) => startEdit(e, item, i)}
-                  />
-                  <img
-                    src="/src/assets/icons/view.png"
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                </div>
-              )}
+              {/* ICONS */}
+              <div className="flex gap-3 ml-3">
+                <img
+                  src="/src/assets/icons/edit.png"
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/agent-profile");
+                  }}
+                />
+                <img
+                  src="/src/assets/icons/view.png"
+                  className="w-4 h-4 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/profile-info");
+                  }}
+                />
+              </div>
+
             </div>
           );
         })}
       </div>
+
     </Card>
   );
 }
