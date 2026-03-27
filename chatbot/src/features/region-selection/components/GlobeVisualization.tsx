@@ -23,7 +23,7 @@ interface GlobeVisualizationProps {
 
 // import worldMapTerrain from '../../../assets/world-map-terrain-v2.png'
 
-import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR, WATER_REGION_COLOR } from '../constants'
+import { LANDMASS_COLOR, SELECTED_STATE_FILL, SELECTED_STATE_BORDER, DEFAULT_FILL, SELECTED_STATE_SIDE_COLOR, DEFAULT_STATE_BORDER, STATE_HOVER_COLOR } from '../constants'
 
 // India Center roughly
 const INDIA_CENTER = { lat: 22.5937, lng: 78.9629, altitude: 0.75 } // Closer initial view (Zoomed in on India)
