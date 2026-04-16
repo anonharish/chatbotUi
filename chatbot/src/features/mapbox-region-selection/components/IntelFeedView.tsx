@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Region } from "../types";
@@ -53,16 +53,59 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
   const [mandalCount, setMandalCount] = useState(0);
 
 
+  const LOCAL_STORAGE_INTEL_KEY = `mapbox_intel_state_${region.id}`;
+  
+  const savedIntelState = useMemo(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_INTEL_KEY);
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      return {
+        selectedMandals: new Map<string, string>(parsed.selectedMandals || []),
+        foName: parsed.foName || "",
+        foPhone: parsed.foPhone || "",
+        panelMode: parsed.panelMode || "info"
+      };
+    } catch {
+      return null;
+    }
+  }, [region.id]);
+
   const [selectedMandals, setSelectedMandals] = useState<Map<string, string>>(
-    new Map(),
+    savedIntelState?.selectedMandals ?? new Map(),
   );
 
   const { updateRegionOfficers } = useRegionContext();
 
-  const [panelMode, setPanelMode] = useState<"info" | "form">("info");
+  const [panelMode, setPanelMode] = useState<"info" | "form">(
+    savedIntelState?.panelMode ?? "info",
+  );
 
-  const [foName, setFoName] = useState("");
-  const [foPhone, setFoPhone] = useState("");
+  const [foName, setFoName] = useState(savedIntelState?.foName ?? "");
+  const [foPhone, setFoPhone] = useState(savedIntelState?.foPhone ?? "");
+
+  // Initialize selectedRef from saved state
+  useEffect(() => {
+    if (savedIntelState?.selectedMandals) {
+      savedIntelState.selectedMandals.forEach((_, id) => {
+        selectedRef.current.add(id);
+      });
+    }
+  }, [savedIntelState]);
+
+  // Persist state to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_INTEL_KEY, JSON.stringify({
+        selectedMandals: Array.from(selectedMandals.entries()),
+        foName,
+        foPhone,
+        panelMode
+      }));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [selectedMandals, foName, foPhone, panelMode, region.id]);
   const savedOfficers = region.fieldOfficers ?? [];
   const [formSuccess, setFormSuccess] = useState(false);
 
@@ -325,8 +368,19 @@ export const IntelFeedView = ({ region, onClose }: IntelFeedViewProps) => {
               return next;
             });
           });
+          // ── Restore unsaved selected mandals on map ──
+          const applySelectedMandalsState = () => {
+            selectedRef.current.forEach((id) => {
+              map.setFeatureState(
+                { source: "mandals", id: Number(id) },
+                { selected: true },
+              );
+            });
+          };
+
           // ── Update pre-existing states on map  ─────────────
           applySavedOfficersFeatureState();
+          applySelectedMandalsState();
         })
         .catch((err) => {
           setMandalError(err.message);

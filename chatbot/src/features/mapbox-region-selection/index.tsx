@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { MapboxVisualization } from "./components/MapboxVisualization";
 import { IntelFeedView } from "./components/IntelFeedView";
@@ -11,24 +11,64 @@ import {
 } from "./types";
 import { RegionProvider, useRegionContext } from "./RegionContext";
 
+const LOCAL_STORAGE_KEY_APP_STATE = 'mapbox_app_state';
+
+function loadAppState() {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY_APP_STATE);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    return {
+      selectedState: parsed.selectedState || null,
+      focusedRegionId: parsed.focusedRegionId || null,
+      currentSelection: new Set<string>(parsed.currentSelection || []),
+      districtInfoMap: new Map<string, DistrictInfo>(parsed.districtInfoMap || []),
+      regionName: parsed.regionName || "",
+      regionalOfficer: parsed.regionalOfficer || "",
+      intelligentOfficer: parsed.intelligentOfficer || ""
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 export const MapboxRegionSelectionFeatureInner = () => {
+  const savedState = useMemo(loadAppState, []);
+  
   // State management
   const { regions, addRegion, deleteRegion } = useRegionContext();
-  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState<string | null>(savedState?.selectedState ?? null);
 
-  const [focusedRegionId, setFocusedRegionId] = useState<string | null>(null);
+  const [focusedRegionId, setFocusedRegionId] = useState<string | null>(savedState?.focusedRegionId ?? null);
   // Use string composite keys: "stateName_featureId"
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(
-    new Set(),
+    savedState?.currentSelection ?? new Set(),
   );
   const [districtInfoMap, setDistrictInfoMap] = useState<
     Map<string, DistrictInfo>
-  >(new Map());
+  >(savedState?.districtInfoMap ?? new Map());
 
   // Form state
-  const [regionName, setRegionName] = useState("");
-  const [regionalOfficer, setRegionalOfficer] = useState("");
-  const [intelligentOfficer, setIntelligentOfficer] = useState("");
+  const [regionName, setRegionName] = useState(savedState?.regionName ?? "");
+  const [regionalOfficer, setRegionalOfficer] = useState(savedState?.regionalOfficer ?? "");
+  const [intelligentOfficer, setIntelligentOfficer] = useState(savedState?.intelligentOfficer ?? "");
+
+  useEffect(() => {
+    try {
+      const stateToSave = {
+        selectedState,
+        focusedRegionId,
+        currentSelection: Array.from(currentSelection),
+        districtInfoMap: Array.from(districtInfoMap.entries()),
+        regionName,
+        regionalOfficer,
+        intelligentOfficer
+      };
+      localStorage.setItem(LOCAL_STORAGE_KEY_APP_STATE, JSON.stringify(stateToSave));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [selectedState, focusedRegionId, currentSelection, districtInfoMap, regionName, regionalOfficer, intelligentOfficer]);
 
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -66,6 +106,10 @@ export const MapboxRegionSelectionFeatureInner = () => {
 
       // Check if already in a region
       if (districtToRegion.has(districtKey)) {
+        const region = districtToRegion.get(districtKey);
+        if (region) {
+          setFocusedRegionId(region.id);
+        }
         return;
       }
 
@@ -214,13 +258,13 @@ export const MapboxRegionSelectionFeatureInner = () => {
         }}
       />
 
-      {/* Map Visualization */}
       <MapboxVisualization
         onStateClick={handleStateClick}
         onDistrictClick={handleDistrictClick}
         onRegionClick={handleRegionClick}
         regions={regions}
         currentSelection={currentSelection}
+        selectedState={selectedState}
         onRegisterGetFeatures={(getter) => {
           getDistrictFeaturesRef.current = getter;
         }}

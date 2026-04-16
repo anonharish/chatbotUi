@@ -36,6 +36,7 @@ interface MapboxVisualizationProps {
   onDistrictHover?: (districtName: string | null) => void;
   regions?: Region[];
   currentSelection?: Set<string>; // Composite keys: "stateName_featureId"
+  selectedState?: string | null;
   onRegionClick?: (regionId: string) => void;
   onRegisterGetFeatures?: (
     getter: (ids: Set<number>) => GeoJSON.Feature[],
@@ -66,6 +67,7 @@ export const MapboxVisualization = ({
   onDistrictHover,
   regions = [],
   currentSelection = new Set(),
+  selectedState = null,
   onRegionClick,
   onRegisterGetFeatures,
 }: MapboxVisualizationProps) => {
@@ -87,6 +89,12 @@ export const MapboxVisualization = ({
     y: 0,
     text: "",
   });
+
+  const actionsRef = useRef<{
+    zoomToState: (state: string) => void;
+    loadStateDistricts: (state: string) => void;
+    flyToIndia: () => void;
+  } | null>(null);
 
   // Track hover timeouts
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,6 +138,21 @@ export const MapboxVisualization = ({
       onRegisterGetFeatures(getFeatures);
     }
   }, [onRegisterGetFeatures]);
+
+  // Handle selectedState changes from props (for external navigation / back buttons)
+  useEffect(() => {
+    if (selectedState !== selectedStateRef.current) {
+      selectedStateRef.current = selectedState;
+      if (actionsRef.current) {
+        if (selectedState) {
+          actionsRef.current.zoomToState(selectedState);
+          actionsRef.current.loadStateDistricts(selectedState);
+        } else {
+          actionsRef.current.flyToIndia();
+        }
+      }
+    }
+  }, [selectedState]);
 
   // Update district colors when regions or selection change
   useEffect(() => {
@@ -584,6 +607,29 @@ export const MapboxVisualization = ({
       );
     };
 
+    // Expose helpers to ref
+    actionsRef.current = {
+      zoomToState,
+      loadStateDistricts,
+      flyToIndia: () => {
+        map.flyTo({ center: INDIA_CENTER, zoom: INITIAL_ZOOM });
+        if (map.getLayer("district-fill")) {
+          map.removeLayer("district-fill");
+        }
+        if (map.getLayer("district-borders")) {
+          map.removeLayer("district-borders");
+        }
+        if (map.getLayer("region-fill")) {
+          map.removeLayer("region-fill");
+        }
+        if (map.getSource("state-districts")) {
+          map.removeSource("state-districts");
+        }
+        districtsLoadedRef.current = false;
+        selectedStateRef.current = null;
+      }
+    };
+
     map.on("load", () => {
       map.setProjection({ type: "globe" });
 
@@ -685,6 +731,11 @@ export const MapboxVisualization = ({
           });
 
           console.log("State layers added");
+
+          if (selectedStateRef.current) {
+            zoomToState(selectedStateRef.current);
+            loadStateDistricts(selectedStateRef.current);
+          }
         });
     });
 
@@ -816,13 +867,45 @@ export const MapboxVisualization = ({
           feature.properties?.NAME ||
           "Unknown District";
 
-        // Show tooltip at cursor position
-        setTooltip({
-          visible: true,
-          x: e.originalEvent.clientX,
-          y: e.originalEvent.clientY,
-          text: districtName,
-        });
+        const currentState = selectedStateRef.current;
+        const districtKey = currentState
+          ? createDistrictKey(currentState, featureId)
+          : null;
+
+        let foundRegion = null;
+        if (districtKey) {
+          foundRegion = regionsRef.current.find(
+            (r) => r.state === currentState && r.districtIds.has(districtKey),
+          );
+        }
+
+        if (foundRegion) {
+          // Show detailed region tooltip for districts that are part of a saved region
+          setTooltip({
+            visible: true,
+            x: e.originalEvent.clientX,
+            y: e.originalEvent.clientY,
+            text: foundRegion.name,
+            isRegion: true,
+            regionId: foundRegion.id,
+            regionInfo: {
+              name: foundRegion.name,
+              regionalOfficer: foundRegion.regionalOfficer,
+              intelligentOfficer: foundRegion.intelligentOfficer,
+              districtCount: foundRegion.districtIds.size,
+              state: foundRegion.state,
+              fieldOfficers: foundRegion.fieldOfficers,
+            },
+          });
+        } else {
+          // Show simple tooltip at cursor position for normal unassigned districts
+          setTooltip({
+            visible: true,
+            x: e.originalEvent.clientX,
+            y: e.originalEvent.clientY,
+            text: districtName,
+          });
+        }
 
         onDistrictHoverRef.current?.(districtName);
       }
