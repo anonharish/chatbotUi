@@ -144,4 +144,10 @@ export const getStateDistrictsCdnUrl = (stateName: string): string | null => {
   return `${DISTRICTS_CDN_BASE}/${slug}/${fileName}`
 }
 
+// Complete map of valid states to their CDN slugs, used for validation in the main component
+export const STATE_CDN_SLUG_MAP: Record<string, string> = Object.keys(STATE_NAME_TO_CODE).reduce((acc, stateName) => {
+  acc[stateName] = STATE_NAME_TO_SHAPEFILE[stateName] ?? stateName.toUpperCase();
+  return acc;
+}, {} as Record<string, string>);
+
 

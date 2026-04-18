@@ -11,7 +11,7 @@ import {
 } from "./types";
 import { RegionProvider, useRegionContext } from "./RegionContext";
 
-const LOCAL_STORAGE_KEY_APP_STATE = 'mapbox_app_state';
+const LOCAL_STORAGE_KEY_APP_STATE = "mapbox_app_state";
 
 function loadAppState() {
   try {
@@ -19,13 +19,15 @@ function loadAppState() {
     if (!saved) return null;
     const parsed = JSON.parse(saved);
     return {
-      selectedState: parsed.selectedState || null,
+      // ── selectedState is intentionally NOT restored ──────────────────────
+      // We always start from the global India view. Saved regions are visible
+      // via the all-regions polygon layer without needing to zoom into a state.
       focusedRegionId: parsed.focusedRegionId || null,
       currentSelection: new Set<string>(parsed.currentSelection || []),
       districtInfoMap: new Map<string, DistrictInfo>(parsed.districtInfoMap || []),
       regionName: parsed.regionName || "",
       regionalOfficer: parsed.regionalOfficer || "",
-      intelligentOfficer: parsed.intelligentOfficer || ""
+      intelligentOfficer: parsed.intelligentOfficer || "",
     };
   } catch (e) {
     return null;
@@ -34,52 +36,57 @@ function loadAppState() {
 
 export const MapboxRegionSelectionFeatureInner = () => {
   const savedState = useMemo(loadAppState, []);
-  
-  // State management
-  const { regions, addRegion, deleteRegion } = useRegionContext();
-  const [selectedState, setSelectedState] = useState<string | null>(savedState?.selectedState ?? null);
 
-  const [focusedRegionId, setFocusedRegionId] = useState<string | null>(savedState?.focusedRegionId ?? null);
-  // Use string composite keys: "stateName_featureId"
+  const { regions, addRegion, deleteRegion } = useRegionContext();
+
+  // Always null on load — user must click a state to zoom in
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+
+  const [focusedRegionId, setFocusedRegionId] = useState<string | null>(
+    savedState?.focusedRegionId ?? null,
+  );
   const [currentSelection, setCurrentSelection] = useState<Set<string>>(
     savedState?.currentSelection ?? new Set(),
   );
-  const [districtInfoMap, setDistrictInfoMap] = useState<
-    Map<string, DistrictInfo>
-  >(savedState?.districtInfoMap ?? new Map());
+  const [districtInfoMap, setDistrictInfoMap] = useState<Map<string, DistrictInfo>>(
+    savedState?.districtInfoMap ?? new Map(),
+  );
 
-  // Form state
   const [regionName, setRegionName] = useState(savedState?.regionName ?? "");
   const [regionalOfficer, setRegionalOfficer] = useState(savedState?.regionalOfficer ?? "");
   const [intelligentOfficer, setIntelligentOfficer] = useState(savedState?.intelligentOfficer ?? "");
 
+  // Persist app state (selectedState deliberately excluded)
   useEffect(() => {
     try {
       const stateToSave = {
-        selectedState,
         focusedRegionId,
         currentSelection: Array.from(currentSelection),
         districtInfoMap: Array.from(districtInfoMap.entries()),
         regionName,
         regionalOfficer,
-        intelligentOfficer
+        intelligentOfficer,
       };
       localStorage.setItem(LOCAL_STORAGE_KEY_APP_STATE, JSON.stringify(stateToSave));
     } catch (e) {
       console.error(e);
     }
-  }, [selectedState, focusedRegionId, currentSelection, districtInfoMap, regionName, regionalOfficer, intelligentOfficer]);
+  }, [
+    focusedRegionId,
+    currentSelection,
+    districtInfoMap,
+    regionName,
+    regionalOfficer,
+    intelligentOfficer,
+  ]);
 
-  // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
-  // Ref for getting district features from map (accepts numeric feature IDs)
   const getDistrictFeaturesRef = useRef<
     ((ids: Set<number>) => GeoJSON.Feature[]) | null
   >(null);
 
-  // Build a map of composite districtKey to region for quick lookup
   const districtToRegion = useMemo(() => {
     const map = new Map<string, Region>();
     regions.forEach((region) => {
@@ -90,7 +97,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
     return map;
   }, [regions]);
 
-  // Handle state click
   const handleStateClick = useCallback((stateName: string) => {
     setSelectedState(stateName);
     setCurrentSelection(new Set());
@@ -98,18 +104,13 @@ export const MapboxRegionSelectionFeatureInner = () => {
     setSidebarOpen(true);
   }, []);
 
-  // Handle district click - toggle selection
   const handleDistrictClick = useCallback(
     (districtId: number, districtName: string, stateName: string) => {
-      // Create composite key for unique identification
       const districtKey = createDistrictKey(stateName, districtId);
 
-      // Check if already in a region
       if (districtToRegion.has(districtKey)) {
         const region = districtToRegion.get(districtKey);
-        if (region) {
-          setFocusedRegionId(region.id);
-        }
+        if (region) setFocusedRegionId(region.id);
         return;
       }
 
@@ -119,7 +120,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
           newSet.delete(districtKey);
         } else {
           newSet.add(districtKey);
-          // Store district info for display
           setDistrictInfoMap((prevMap) => {
             const newMap = new Map(prevMap);
             newMap.set(districtKey, {
@@ -137,7 +137,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
     [districtToRegion],
   );
 
-  // Get selected district data for display
   const selectedDistrictsData = useMemo(() => {
     return Array.from(currentSelection).map((key) => {
       const info = districtInfoMap.get(key);
@@ -153,7 +152,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
     });
   }, [currentSelection, districtInfoMap, selectedState]);
 
-  // Clear selection
   const clearSelection = useCallback(() => {
     setCurrentSelection(new Set());
     setRegionName("");
@@ -161,20 +159,14 @@ export const MapboxRegionSelectionFeatureInner = () => {
     setIntelligentOfficer("");
   }, []);
 
-  // Save region
   const saveRegion = useCallback(() => {
-    if (currentSelection.size === 0 || !regionName.trim() || !selectedState)
-      return;
+    if (currentSelection.size === 0 || !regionName.trim() || !selectedState) return;
 
     const usedColors = regions.map((r) => r.color);
-    // Get district geometries for persistent rendering
-    // Extract numeric feature IDs for the current state only
     const featureIds = new Set<number>();
     currentSelection.forEach((key) => {
       const parsed = parseDistrictKey(key);
-      if (parsed && parsed.state === selectedState) {
-        featureIds.add(parsed.featureId);
-      }
+      if (parsed && parsed.state === selectedState) featureIds.add(parsed.featureId);
     });
     const geometry = getDistrictFeaturesRef.current?.(featureIds) || [];
 
@@ -187,7 +179,7 @@ export const MapboxRegionSelectionFeatureInner = () => {
       regionalOfficer: regionalOfficer.trim(),
       intelligentOfficer: intelligentOfficer.trim(),
       state: selectedState,
-      geometry: geometry,
+      geometry,
       fieldOfficers: [],
     };
 
@@ -205,8 +197,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
     addRegion,
   ]);
 
-  // Delete region handled by Context directly now
-  // Remove district from selection
   const removeFromSelection = useCallback((districtKey: string) => {
     setCurrentSelection((prev) => {
       const newSet = new Set(prev);
@@ -215,7 +205,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
     });
   }, []);
 
-  // Back to India view
   const handleBackToIndia = useCallback(() => {
     setSelectedState(null);
     setCurrentSelection(new Set());
@@ -249,7 +238,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
         backgroundSize: "100% 100%",
       }}
     >
-      {/* Globe glow effect */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -346,7 +334,7 @@ export const MapboxRegionSelectionFeatureInner = () => {
         </div>
       )}
 
-      {/* Region Manager Toggle - When sidebar is closed */}
+      {/* Region Manager Toggle */}
       {!sidebarOpen && selectedState && (
         <button
           onClick={() => setSidebarOpen(true)}
@@ -373,16 +361,13 @@ export const MapboxRegionSelectionFeatureInner = () => {
         </button>
       )}
 
-      {/* Right Sidebar - Floating Panel */}
+      {/* Right Sidebar */}
       <div
         className={`absolute top-4 bottom-4 right-4 w-96 z-[1000] transition-all duration-500 ease-out ${
-          sidebarOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-[120%] opacity-0"
+          sidebarOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0"
         }`}
       >
         <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl h-full flex flex-col overflow-hidden">
-          {/* Panel Header */}
           <div className="p-5 border-b border-white/10">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold text-white flex items-center gap-3">
@@ -427,10 +412,8 @@ export const MapboxRegionSelectionFeatureInner = () => {
             </p>
           </div>
 
-          {/* Panel Content */}
           <div className="flex-1 overflow-auto p-5 space-y-5">
             {!selectedState ? (
-              /* No state selected */
               <div className="flex flex-col items-center justify-center h-full text-center py-8">
                 <div className="w-20 h-20 mb-5 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
                   <svg
@@ -447,14 +430,10 @@ export const MapboxRegionSelectionFeatureInner = () => {
                     <circle cx="12" cy="10" r="3" />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-lg text-white mb-2">
-                  Select a State
-                </h3>
+                <h3 className="font-semibold text-lg text-white mb-2">Select a State</h3>
                 <p className="text-white/60 text-sm max-w-xs mb-5">
                   Click on any{" "}
-                  <span className="text-green-400 font-medium">
-                    highlighted state
-                  </span>{" "}
+                  <span className="text-green-400 font-medium">highlighted state</span>{" "}
                   on the map to zoom in and create regions
                 </p>
                 <div className="flex items-center gap-2 text-xs text-white/50">
@@ -464,7 +443,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
               </div>
             ) : (
               <>
-                {/* New Region Form */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
@@ -495,7 +473,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
                     />
                   </div>
 
-                  {/* Selected Districts Preview */}
                   {selectedDistrictsData.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1">
@@ -509,9 +486,7 @@ export const MapboxRegionSelectionFeatureInner = () => {
                             key={d.id}
                             className="group flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-lg hover:border-red-500/50 hover:bg-red-500/10 transition-all cursor-default"
                           >
-                            <span className="text-xs font-medium">
-                              {d.name}
-                            </span>
+                            <span className="text-xs font-medium">{d.name}</span>
                             <button
                               onClick={() => removeFromSelection(d.id)}
                               className="text-sky-500/50 group-hover:text-red-400 hover:scale-110 transition-all"
@@ -536,7 +511,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3">
                     <button
                       onClick={clearSelection}
@@ -546,9 +520,7 @@ export const MapboxRegionSelectionFeatureInner = () => {
                     </button>
                     <button
                       onClick={saveRegion}
-                      disabled={
-                        !regionName.trim() || currentSelection.size === 0
-                      }
+                      disabled={!regionName.trim() || currentSelection.size === 0}
                       className="flex-1 px-4 py-3 text-sm bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <svg
@@ -569,7 +541,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
                   </div>
                 </div>
 
-                {/* Saved Regions */}
                 {regions.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold text-white">
@@ -587,9 +558,7 @@ export const MapboxRegionSelectionFeatureInner = () => {
                                 className="w-4 h-4 rounded-full"
                                 style={{ backgroundColor: region.color }}
                               />
-                              <span className="font-medium text-white">
-                                {region.name}
-                              </span>
+                              <span className="font-medium text-white">{region.name}</span>
                             </div>
                             <button
                               onClick={() => deleteRegion(region.id)}
@@ -610,15 +579,10 @@ export const MapboxRegionSelectionFeatureInner = () => {
                           </div>
                           <div className="text-xs text-white/50 space-y-1">
                             <p>
-                              {region.state} • {region.districtIds.size}{" "}
-                              districts
+                              {region.state} • {region.districtIds.size} districts
                             </p>
-                            {region.regionalOfficer && (
-                              <p>RO: {region.regionalOfficer}</p>
-                            )}
-                            {region.intelligentOfficer && (
-                              <p>IO: {region.intelligentOfficer}</p>
-                            )}
+                            {region.regionalOfficer && <p>RO: {region.regionalOfficer}</p>}
+                            {region.intelligentOfficer && <p>IO: {region.intelligentOfficer}</p>}
                           </div>
                         </div>
                       ))}
@@ -629,7 +593,6 @@ export const MapboxRegionSelectionFeatureInner = () => {
             )}
           </div>
 
-          {/* Panel Footer - Legend */}
           <div className="p-4 border-t border-white/10">
             <div className="flex flex-wrap gap-3 text-xs text-white/60">
               <div className="flex items-center gap-2">
