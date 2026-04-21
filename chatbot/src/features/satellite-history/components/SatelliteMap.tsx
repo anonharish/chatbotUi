@@ -13,39 +13,45 @@ export interface SatelliteMapHandle {
   flyTo: (lat: number, lon: number, bbox?: [string, string, string, string]) => void;
 }
 
-// Define a satellite-first base style using ArcGIS World Imagery
-const SATELLITE_BASE_STYLE: maplibregl.StyleSpecification = {
-    version: 8,
-    sources: {
-        'esri-world-imagery': {
-            type: 'raster',
-            tiles: ['https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-            tileSize: 256,
-            attribution: '© Esri',
-        },
-        'esri-labels': {
-            type: 'raster',
-            tiles: ['https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
-            tileSize: 256,
-            attribution: '© Esri',
-        },
+// Google Satellite base style — fast, high-quality, no ArcGIS
+const GOOGLE_SATELLITE_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    'google-satellite': {
+      type: 'raster',
+      tiles: [
+        'https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        'https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        'https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      ],
+      tileSize: 256,
+      maxzoom: 20,
+      attribution: '© Google',
     },
-    layers: [
-        {
-            id: 'esri-world-imagery',
-            type: 'raster',
-            source: 'esri-world-imagery',
-            minzoom: 0,
-            maxzoom: 20,
-        },
-        {
-            id: 'esri-labels',
-            type: 'raster',
-            source: 'esri-labels',
-            minzoom: 0,
-            maxzoom: 20,
-        },
-    ],
+    'google-labels': {
+      type: 'raster',
+      tiles: [
+        'https://mt0.google.com/vt/lyrs=h&x={x}&y={y}&z={z}',
+        'https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}',
+      ],
+      tileSize: 256,
+      maxzoom: 20,
+      attribution: '© Google',
+    },
+  },
+  layers: [
+    {
+      id: 'google-satellite',
+      type: 'raster',
+      source: 'google-satellite',
+    },
+    {
+      id: 'google-labels',
+      type: 'raster',
+      source: 'google-labels',
+    },
+  ],
 };
 
 export const SatelliteMap = forwardRef<SatelliteMapHandle, SatelliteMapProps>(
@@ -60,9 +66,9 @@ export const SatelliteMap = forwardRef<SatelliteMapHandle, SatelliteMapProps>(
 
       const map = new maplibregl.Map({
         container: containerRef.current,
-        style: SATELLITE_BASE_STYLE,
+        style: GOOGLE_SATELLITE_STYLE,
         center: [78.9629, 20.5937], // Default: India centred
-        zoom: 3,
+        zoom: 5,
         attributionControl: false,
       });
 

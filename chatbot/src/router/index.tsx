@@ -14,6 +14,7 @@ const RegionSelectionPage = lazy(() => import('@/pages/region-selection/RegionSe
 const MapboxPage = lazy(() => import('@/pages/mapbox-region-selection/MapboxPage'))
 const DummyPage = lazy(() => import('@/pages/DummyPage'))
 const SatelliteHistoryPage = lazy(() => import('@/pages/satellite-history/SatelliteHistoryPage'))
+const SatelliteGEEPage = lazy(() => import('@/pages/satellite-gee/SatelliteGEEPage'))
 
 // ✅ Keep BOTH feature + master pages
 const DirectoryPage = lazy(() => import('@/pages/DirectoryPage'))
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
           {
             path: 'satellite-history',
             element: withSuspense(SatelliteHistoryPage),
+          },
+          {
+            path: 'satellite-gee',
+            element: withSuspense(SatelliteGEEPage),
           },
         ],
       },

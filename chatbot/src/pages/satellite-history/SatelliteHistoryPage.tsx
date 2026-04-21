@@ -1,15 +1,17 @@
 import { useState, useRef, useCallback } from 'react';
-import { Satellite } from 'lucide-react';
+import { Satellite, AlertTriangle, Loader2 } from 'lucide-react';
 import { PlaceSearchBar } from '@/features/satellite-history/components/PlaceSearchBar';
 import { YearSlider } from '@/features/satellite-history/components/YearSlider';
 import { InfoPanel } from '@/features/satellite-history/components/InfoPanel';
 import { SatelliteMap, type SatelliteMapHandle } from '@/features/satellite-history/components/SatelliteMap';
+import { useWaybackSource } from '@/features/satellite-history/hooks/useWaybackSource';
 import {
   getYesterday,
   yearFromDate,
-  getSourceConfig,
 } from '@/features/satellite-history/utils/gibsUtils';
 import '@/features/satellite-history/satellite-history.css';
+
+// ─── SatelliteHistoryPage ─────────────────────────────────────────────────────
 
 export default function SatelliteHistoryPage() {
   const [date, setDate] = useState<string>(getYesterday());
@@ -17,7 +19,10 @@ export default function SatelliteHistoryPage() {
   const [isLatestMode, setIsLatestMode] = useState(true);
   const mapRef = useRef<SatelliteMapHandle>(null);
 
-  const sourceConfig = getSourceConfig(date);
+  // ── Dynamic Wayback source — replaces hardcoded WAYBACK_MAPPING ──────────
+  const { sourceConfig, release, isLoading, error } = useWaybackSource(date);
+
+  // ─── Event handlers ───────────────────────────────────────────────────────
 
   const handlePlaceSelect = useCallback(
     (lat: number, lon: number, name: string, bbox: [string, string, string, string]) => {
@@ -40,6 +45,8 @@ export default function SatelliteHistoryPage() {
     setIsLatestMode(true);
   }, []);
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
     <div className="sat-page">
       {/* ── Top Header Bar ── */}
@@ -54,13 +61,32 @@ export default function SatelliteHistoryPage() {
         </div>
       </header>
 
-      {/* ── Map ── */}
+      {/* ── Error Banner (fetch failures) ── */}
+      {error && (
+        <div className="sat-error-banner" role="alert">
+          <AlertTriangle size={14} />
+          <span>Unable to load Wayback releases: {error}</span>
+        </div>
+      )}
+
+      {/* ── Map Area ── */}
       <main className="sat-map-area">
-        <SatelliteMap 
-          ref={mapRef} 
-          tileUrl={sourceConfig.url} 
-          maxzoom={sourceConfig.maxzoom} 
-          coords={null} 
+        {/* Loading overlay — shown while releasing data is being fetched */}
+        {isLoading && (
+          <div className="sat-loading-overlay">
+            <div className="sat-loading-card">
+              <Loader2 size={28} className="sat-loading-spinner" />
+              <span className="sat-loading-text">Loading Wayback imagery releases…</span>
+            </div>
+          </div>
+        )}
+
+        {/* Map — always mounted; tileUrl is undefined until sourceConfig is ready */}
+        <SatelliteMap
+          ref={mapRef}
+          tileUrl={sourceConfig?.url ?? ''}
+          maxzoom={sourceConfig?.maxzoom ?? 18}
+          coords={null}
         />
 
         {/* Floating Info Panel */}
@@ -69,8 +95,7 @@ export default function SatelliteHistoryPage() {
             placeName={placeName}
             date={date}
             layer="Esri World Imagery"
-            isLatestMode={isLatestMode}
-            sourceMode="refined"
+            releaseDate={release?.date}
           />
         </div>
       </main>
